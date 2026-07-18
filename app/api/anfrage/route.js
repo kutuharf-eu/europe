@@ -65,9 +65,9 @@ export async function POST(request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Absender voruebergehend ueber die verifizierte kittelwerk.de-Domain,
-          // bis kutuharf.de in Resend verifiziert ist.
-          from: 'KUTUHARF <info@kittelwerk.de>',
+          // Absender: eigene Resend-Domain kutuharf.eu (Konto kutuharf.eu@gmail.com),
+          // DNS-Verifizierung erforderlich — bis dahin schlagen Mails leise fehl (DB speichert trotzdem).
+          from: 'KUTUHARF <info@kutuharf.eu>',
           to: ['info@kutuharf.eu'],
           reply_to: String(email).trim(),
           subject: `Neue Anfrage${produkt ? ': ' + produkt : ''} — ${name}`,

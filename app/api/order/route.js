@@ -272,14 +272,14 @@ export async function POST(request) {
 
     await Promise.all([
       send({
-        from: 'KUTUHARF <info@kittelwerk.de>',
+        from: 'KUTUHARF <info@kutuharf.eu>',
         to: ['info@kutuharf.eu'],
         reply_to: email,
         subject: `Neue Bestellung ${orderNo}${rate > 0 ? ' (Händler)' : ''} — ${name}`,
         text: `Kunde: ${name}${firma ? ' / ' + firma : ''}\nE-Mail: ${email}\nTelefon: ${telefon || '—'}\nAdresse: ${strasse}, ${plz} ${ort}\n${notes ? 'Anmerkung: ' + notes + '\n' : ''}${safeLogoUrl ? 'Logo/Druckdaten: ' + safeLogoUrl + '\n' : ''}\n${summary}`,
       }),
       send({
-        from: 'KUTUHARF <info@kittelwerk.de>',
+        from: 'KUTUHARF <info@kutuharf.eu>',
         to: [email],
         reply_to: 'info@kutuharf.eu',
         subject: `Ihre Bestellung ${orderNo} bei KUTUHARF`,
