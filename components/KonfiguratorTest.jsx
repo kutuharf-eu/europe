@@ -20,7 +20,7 @@ import {
   ACRYL_COLORS, CHROM_COLORS, CHROM_SURFACES, CHROM_SIDE_IDS, LIGHT_COLORS, WANDABSTAND,
   SURFACES, DEPTHS, BODY_MAT_RUECK, RUECK_CHROM_IDS, RUECK_LACK_IDS, RUECK_WAND_AKRYL_IDS, BACK_PANELS,
   SIDE_MAT_FRONT, UNBEL_MAT, LIGHT_DIRS, TABELLE_TYPES,
-  buildCfg, priceForState, detail3, recommendDepth, sizeAssessment, estimateSize,
+  buildCfg, priceForState, detail3, recommendDepth, sizeAssessment, estimateSize, sanitizeV3Config,
   KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo, logoEquivalentLetters,
   normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS,
 } from '@/data/konfigurator3';
@@ -569,6 +569,12 @@ export default function KonfiguratorTest() {
     return undefined;
   })();
   const cfg = buildCfg(sel);
+  // Serverseitige Validierung (identische Funktion wie /api/order) schon im Client
+  // spiegeln → Warenkorb wird nur freigegeben, wenn die Bestellung auch durchgeht.
+  // Häufigster Fall: lackierte Seiten/Rückwand ohne gewählte RAL-Farbe.
+  const cfgCheck = sanitizeV3Config(cfg);
+  const configIncomplete = !cfgCheck.ok;
+  const needRalMissing = !cfgCheck.ok && (cfgCheck.errors.includes('ralCode') || cfgCheck.errors.includes('unbelRal'));
   // Preis: sofort die lokale Formel anzeigen (kein Flackern), dann serverseitig
   // verfeinern (/api/price — Kostenmotor mit echten Materialpreisen; Rohkosten
   // bleiben auf dem Server). Fehler/Timeout → lokale Formel bleibt stehen.
@@ -652,7 +658,7 @@ export default function KonfiguratorTest() {
   }, [maxHeight]);
 
   const add = () => {
-    if (!price || needFlushConfirm || areaTooSmall) return;
+    if (!price || needFlushConfirm || areaTooSmall || configIncomplete) return;
     // Hochgeladene Kundenschrift als Positions-Datei anhängen (falls Storage-Upload gelang)
     const fontFile = sel.fontId === 'custom' && customFont?.url ? { fileUrl: customFont.url, fileName: customFont.name } : {};
     addItem({ categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: t('konfig3.itemName'), detail: detail3(sel), unitPrice: price.total, konfig: cfg, oversize, quoteOnly, ...fontFile });
@@ -1239,11 +1245,14 @@ export default function KonfiguratorTest() {
             )}
             <span className="text-[12px] text-textmut">{t('konfig3.netNote')}</span>
             {needFlushConfirm && <p className="m-0 text-[13px] text-warnred font-semibold">{t('konfig3.flushRequired')}</p>}
+            {configIncomplete && (
+              <p className="m-0 text-[13px] text-warnred font-semibold">{needRalMissing ? t('konfig3.needRal') : t('konfig3.configIncomplete')}</p>
+            )}
             {needsProjekt && (
               <p className="m-0 text-[13px] font-semibold text-[#9a6414]">{t('konfig3.traegerPriceNote')}</p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
-              <button onClick={add} disabled={!price || needFlushConfirm || areaTooSmall} className={`flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 text-white cursor-pointer disabled:opacity-40 disabled:shadow-none ${added ? 'bg-charcoal' : 'kh-glow-btn bg-accent hover:brightness-90'}`}>{added ? <Check size={17} /> : <ShoppingBag size={17} />}{added ? t('konfig3.added') : t('konfig3.addToCart')}</button>
+              <button onClick={add} disabled={!price || needFlushConfirm || areaTooSmall || configIncomplete} className={`flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 text-white cursor-pointer disabled:opacity-40 disabled:shadow-none ${added ? 'bg-charcoal' : 'kh-glow-btn bg-accent hover:brightness-90'}`}>{added ? <Check size={17} /> : <ShoppingBag size={17} />}{added ? t('konfig3.added') : t('konfig3.addToCart')}</button>
               <Link href={inquiryHref} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-white"><MessageSquare size={16} /> {t('konfig3.inquiry')}</Link>
               <button onClick={() => setBuyerOpen(true)} disabled={!price} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-charcoal text-charcoal hover:bg-charcoal hover:text-white cursor-pointer disabled:opacity-40"><FileText size={16} /> {t('konfig3.pdf')}</button>
               <button onClick={reset} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-inputline text-textsec hover:border-accent hover:text-accent cursor-pointer"><RotateCcw size={16} /> {t('konfig3.resetBtn')}</button>
@@ -1265,7 +1274,8 @@ export default function KonfiguratorTest() {
             <div className="flex justify-between items-baseline font-extrabold text-xl pt-2.5 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.netto')}</span><span>{fmtEur(price.total)}</span></div>
             <span className="text-[11px] text-textmut">{t('konfig3.plusVat')}</span>
             {needFlushConfirm && <span className="text-[11px] text-warnred font-semibold">{t('konfig3.flushRequired')}</span>}
-            <button onClick={add} disabled={needFlushConfirm || areaTooSmall} className="kh-glow-btn mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 bg-accent text-white hover:brightness-90 cursor-pointer disabled:opacity-40 disabled:shadow-none"><ShoppingBag size={16} /> {t('konfig3.addToCart')}</button>
+            {configIncomplete && <span className="text-[11px] text-warnred font-semibold">{needRalMissing ? t('konfig3.needRal') : t('konfig3.configIncomplete')}</span>}
+            <button onClick={add} disabled={needFlushConfirm || areaTooSmall || configIncomplete} className="kh-glow-btn mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 bg-accent text-white hover:brightness-90 cursor-pointer disabled:opacity-40 disabled:shadow-none"><ShoppingBag size={16} /> {t('konfig3.addToCart')}</button>
           </>
         ) : <p className="m-0 text-[12px] text-textmut">{t('konfig3.chooseForPrice')}</p>}
       </aside>
