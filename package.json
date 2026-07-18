@@ -1,0 +1,26 @@
+{
+  "name": "kutuharf-europe",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3004",
+    "build": "next build",
+    "start": "next start",
+    "coeff": "node scripts/generate-coefficients.mjs",
+    "test:motor": "node --test tests/motor.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "lucide-react": "^1.23.0",
+    "next": "^16.2.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "opentype.js": "^1.3.4",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Tema tokenları ──────────────────────────────────────────────────────────
+   :root = açık tema (site geneli: kasse, kontakt, admin …) — ESKİ değerler.
+   .theme-studio = koyu "3D Tabela Stüdyosu" (konfigüratör ana sayfası).
+   Değerler space-separated RGB (Tailwind <alpha-value> için). */
+:root {
+  --kh-accent: 29 78 216;        /* #1d4ed8 */
+  --kh-accentlite: 125 162 255;  /* #7da2ff */
+  --kh-charcoal: 35 38 43;       /* #23262b */
+  --kh-herobg: 46 49 56;         /* #2e3138 */
+  --kh-textsec: 85 88 94;        /* #55585e */
+  --kh-textmut: 107 107 107;     /* #6b6b6b */
+  --kh-lighttxt: 232 232 232;    /* #e8e8e8 */
+  --kh-mutedark: 184 187 192;    /* #b8bbc0 */
+  --kh-sectionlight: 245 244 242;/* #f5f4f2 */
+  --kh-linegray: 236 236 236;    /* #ececec */
+  --kh-inputline: 213 213 213;   /* #d5d5d5 */
+  --kh-warnred: 194 45 14;       /* #c22d0e */
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #23262b;
+}
+
+/* ── STUDIO (koyu premium) — tasarım brief'i 17 Tem 2026 ──────────────────── */
+.theme-studio {
+  --kh-accent: 215 255 39;       /* --primary #D7FF27 asit yeşili */
+  --kh-accentlite: 200 242 28;   /* --primary-hover #C8F21C */
+  --kh-charcoal: 248 250 252;    /* metin: --text-primary #F8FAFC */
+  --kh-herobg: 11 16 38;         /* --background-secondary #0B1026 */
+  --kh-textsec: 156 163 175;     /* --text-secondary #9CA3AF */
+  --kh-textmut: 107 114 128;     /* --text-muted #6B7280 */
+  --kh-lighttxt: 248 250 252;
+  --kh-mutedark: 156 163 175;
+  --kh-sectionlight: 7 6 21;     /* --background #070615 */
+  --kh-linegray: 39 40 58;       /* --border #27283A */
+  --kh-inputline: 54 56 78;      /* border biraz açık — input kenarları */
+  --kh-warnred: 248 113 113;     /* --error #F87171 */
+
+  --studio-surface: #101018;          /* --surface */
+  --studio-surface-elevated: #12131D; /* --surface-elevated */
+  --studio-surface-input: #0A0B12;    /* --surface-input */
+  --studio-primary-fg: #080A0D;       /* --primary-foreground */
+  --studio-violet-glow: rgba(99, 102, 241, 0.24);
+
+  background-color: #070615;
+  color: rgb(248 250 252);
+  color-scheme: dark;
+}
+
+/* Arka plan ışık hüzmeleri: yumuşak lacivert/mor — kripto değil, sahne ışığı */
+.theme-studio .kh-beams {
+  position: relative;
+}
+.theme-studio .kh-beams::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 500px at 15% -5%, var(--studio-violet-glow), transparent 65%),
+    radial-gradient(700px 420px at 90% 10%, rgba(49, 46, 129, 0.35), transparent 60%),
+    radial-gradient(1000px 600px at 50% 110%, rgba(11, 16, 38, 0.9), transparent 70%);
+}
+.theme-studio .kh-beams > * {
+  position: relative;
+}
+
+/* Yüzey eşlemeleri: mevcut sınıflar JSX'te değişmeden koyu yüzeylere döner */
+.theme-studio .bg-white { background-color: var(--studio-surface); }
+.theme-studio .bg-charcoal { background-color: var(--studio-surface-elevated); }
+
+/* Asit yeşili dolgulu öğelerde metin koyu olmalı (mockup: koyu yazılı butonlar) */
+.theme-studio .bg-accent { color: var(--studio-primary-fg); }
+.theme-studio .bg-accent .text-white,
+.theme-studio .bg-accent svg { color: var(--studio-primary-fg); }
+.theme-studio .bg-accent:hover { filter: none; background-color: rgb(var(--kh-accentlite)); }
+
+/* Form elemanları: koyu input yüzeyi + açık metin */
+.theme-studio input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+.theme-studio select,
+.theme-studio textarea {
+  background-color: var(--studio-surface-input);
+  color: rgb(248 250 252);
+}
+.theme-studio input::placeholder,
+.theme-studio textarea::placeholder { color: rgb(107 114 128); }
+.theme-studio select option { background-color: var(--studio-surface-input); color: rgb(248 250 252); }
+
+/* Kart gölgeleri koyuda daha derin + aktif seçim için hafif yeşil parlama */
+.theme-studio .shadow-card { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
+.theme-studio .border-accent { box-shadow: 0 0 0 1px rgb(var(--kh-accent) / 0.35), 0 0 18px rgb(var(--kh-accent) / 0.12); }
+
+/* Pastel uyarı kutuları (arbitrary hex sınıfları) → koyu tema eşdeğerleri */
+.theme-studio [class*='fdf3e6'] { background-color: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.35); }
+.theme-studio [class*='9a6414'] { color: #fbbf24; }
+.theme-studio [class*='d9a441'] { border-color: rgba(251, 191, 36, 0.35); }
+.theme-studio [class*='fdeceb'] { background-color: rgba(248, 113, 113, 0.10); }
+.theme-studio [class*='eaf6ee'] { background-color: rgba(215, 255, 39, 0.08); }
+.theme-studio [class*='1c7a45'] { color: #d7ff27; border-color: rgba(215, 255, 39, 0.30); }
+
+/* Glow buton (Uiverse "shadow__btn" uyarlaması — mavi yerine tema accent'i).
+   Sadece koyu stüdyo temasında parlar; hover'da katmanlı halo büyür. */
+.theme-studio .kh-glow-btn {
+  transition: box-shadow 0.5s;
+  box-shadow: 0 0 25px rgb(var(--kh-accent) / 0.55);
+}
+.theme-studio .kh-glow-btn:hover {
+  box-shadow:
+    0 0 5px rgb(var(--kh-accent) / 0.9),
+    0 0 25px rgb(var(--kh-accent) / 0.7),
+    0 0 50px rgb(var(--kh-accent) / 0.5),
+    0 0 100px rgb(var(--kh-accent) / 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-studio .kh-glow-btn { transition: none; }
+}
+
+/* Koyu zeminde ince ayrımlar */
+.theme-studio ::-webkit-scrollbar { width: 10px; height: 10px; }
+.theme-studio ::-webkit-scrollbar-track { background: #0a0b12; }
+.theme-studio ::-webkit-scrollbar-thumb { background: #27283a; border-radius: 6px; }
+.theme-studio ::-webkit-scrollbar-thumb:hover { background: #36384e; }
