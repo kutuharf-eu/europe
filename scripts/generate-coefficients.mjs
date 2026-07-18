@@ -57,8 +57,9 @@ function pickGlyph(key, ch) {
   return null;
 }
 
-// Zeichensatz laut Brief §3.6
-const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÇĞİÖŞÜçğıöşü0123456789&.-\'';
+// Zeichensatz laut Brief §3.6 + Deutsch (Ä ä ß) + akzentuierte Zeichen (é è à).
+// Ö Ü ö ü zählen zum Deutsch-Block (nicht doppelt im türkischen Block).
+const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüßÇĞİŞçğışÉÈÀéèà0123456789&.-\'';
 
 mkdirSync(path.join(root, 'public', 'coefficients'), { recursive: true });
 mkdirSync(path.join(root, 'public', 'glyphs'), { recursive: true });
