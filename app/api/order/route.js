@@ -26,7 +26,8 @@ export async function POST(request) {
     return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 });
   }
 
-  const { name, firma, email, telefon, strasse, plz, ort, items, resellerEmail, discountCode, sonder, logoUrl, notes } = body || {};
+  const { name, firma, email, telefon, strasse, plz, ort, land, items, resellerEmail, discountCode, sonder, logoUrl, notes } = body || {};
+  const safeLand = land ? String(land).trim().slice(0, 80) : null;
 
   // Nur Uploads aus unserem eigenen Storage-Bucket akzeptieren
   const uploadPrefix = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/`;
@@ -195,41 +196,58 @@ export async function POST(request) {
 
   // Geteilte Supabase-DB (restaurantspezial-Projekt): kutuharf-Bestellungen leben in
   // kutuharf_orders — NIE in der orders-Tabelle von restaurantspezial.
-  const insert = await fetch(`${process.env.SUPABASE_URL}/rest/v1/kutuharf_orders`, {
-    method: 'POST',
-    headers: {
-      apikey: process.env.SUPABASE_SECRET_KEY,
-      Authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify({
-      order_no: orderNo,
-      name: String(name).trim().slice(0, 120),
-      firma: firma ? String(firma).trim().slice(0, 160) : null,
-      email: String(email).trim().slice(0, 200),
-      telefon: telefon ? String(telefon).trim().slice(0, 60) : null,
-      strasse: String(strasse).trim().slice(0, 200),
-      plz: String(plz).trim().slice(0, 10),
-      ort: String(ort).trim().slice(0, 120),
-      items: recalc,
-      subtotal,
-      discount_rate: rate,
-      discount_amount: discount,
-      discount_code: code,
-      code_discount: codeDiscount,
-      sonder_discount: sonderDiscount,
-      sonder_note: sonderDef ? sonderLabel(sonderDef) : null,
-      logo_url: safeLogoUrl,
-      shipping_cost: shipping,
-      vat_amount: vat,
-      total,
-      payment_method: 'vorkasse',
-      is_reseller: rate > 0,
-      reseller_email: rate > 0 ? resellerEmail : null,
-      notes: notes ? String(notes).slice(0, 2000) : null,
-    }),
-  });
+  const cleanNotes = notes ? String(notes).slice(0, 2000) : null;
+  const orderRow = {
+    order_no: orderNo,
+    name: String(name).trim().slice(0, 120),
+    firma: firma ? String(firma).trim().slice(0, 160) : null,
+    email: String(email).trim().slice(0, 200),
+    telefon: telefon ? String(telefon).trim().slice(0, 60) : null,
+    strasse: String(strasse).trim().slice(0, 200),
+    plz: String(plz).trim().slice(0, 10),
+    ort: String(ort).trim().slice(0, 120),
+    land: safeLand,
+    items: recalc,
+    subtotal,
+    discount_rate: rate,
+    discount_amount: discount,
+    discount_code: code,
+    code_discount: codeDiscount,
+    sonder_discount: sonderDiscount,
+    sonder_note: sonderDef ? sonderLabel(sonderDef) : null,
+    logo_url: safeLogoUrl,
+    shipping_cost: shipping,
+    vat_amount: vat,
+    total,
+    payment_method: 'vorkasse',
+    is_reseller: rate > 0,
+    reseller_email: rate > 0 ? resellerEmail : null,
+    notes: cleanNotes,
+  };
+
+  const postOrder = (row) =>
+    fetch(`${process.env.SUPABASE_URL}/rest/v1/kutuharf_orders`, {
+      method: 'POST',
+      headers: {
+        apikey: process.env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(row),
+    });
+
+  let insert = await postOrder(orderRow);
+  // Sicherheitsnetz: Fehlt die land-Spalte in der DB noch, darf die Bestellung nicht
+  // scheitern — dann ohne Spalte erneut versuchen und das Land in notes bewahren.
+  if (!insert.ok) {
+    const errText = await insert.clone().text().catch(() => '');
+    if (/\bland\b/i.test(errText)) {
+      const { land: _omit, ...fallback } = orderRow;
+      fallback.notes = [safeLand ? `Land: ${safeLand}` : null, cleanNotes].filter(Boolean).join('\n') || null;
+      insert = await postOrder(fallback);
+    }
+  }
 
   if (!insert.ok) {
     console.error('Order insert failed:', insert.status, await insert.text());
@@ -276,7 +294,7 @@ export async function POST(request) {
         to: ['info@kutuharf.eu'],
         reply_to: email,
         subject: `Neue Bestellung ${orderNo}${rate > 0 ? ' (Händler)' : ''} — ${name}`,
-        text: `Kunde: ${name}${firma ? ' / ' + firma : ''}\nE-Mail: ${email}\nTelefon: ${telefon || '—'}\nAdresse: ${strasse}, ${plz} ${ort}\n${notes ? 'Anmerkung: ' + notes + '\n' : ''}${safeLogoUrl ? 'Logo/Druckdaten: ' + safeLogoUrl + '\n' : ''}\n${summary}`,
+        text: `Kunde: ${name}${firma ? ' / ' + firma : ''}\nE-Mail: ${email}\nTelefon: ${telefon || '—'}\nAdresse: ${strasse}, ${plz} ${ort}${safeLand ? ', ' + safeLand : ''}\n${notes ? 'Anmerkung: ' + notes + '\n' : ''}${safeLogoUrl ? 'Logo/Druckdaten: ' + safeLogoUrl + '\n' : ''}\n${summary}`,
       }),
       send({
         from: 'KUTUHARF <info@kutuharf.eu>',

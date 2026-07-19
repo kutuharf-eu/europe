@@ -10,6 +10,12 @@ import { useT } from '@/components/LocaleProvider';
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
 
+const LAENDER = [
+  'Deutschland', 'Österreich', 'Schweiz', 'Belgien', 'Niederlande', 'Luxemburg',
+  'Frankreich', 'Italien', 'Spanien', 'Dänemark', 'Polen', 'Tschechien',
+  'Schweden', 'Türkei',
+];
+
 export default function KasseClient() {
   const tx = useT();
   const { items, reseller, clear } = useCartStore();
@@ -18,7 +24,7 @@ export default function KasseClient() {
   // Grundplatte/Tragprofil): Online-Zahlung gesperrt — automatisch Angebots-Anfrage.
   const hasOversize = items.some((i) => i.oversize || i.quoteOnly);
   const onlyQuoteOpts = hasOversize && !items.some((i) => i.oversize);
-  const [form, setForm] = useState({ name: '', firma: '', email: '', telefon: '', strasse: '', plz: '', ort: '', notes: '' });
+  const [form, setForm] = useState({ name: '', firma: '', email: '', telefon: '', strasse: '', plz: '', ort: '', land: 'Deutschland', notes: '' });
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [orderNo, setOrderNo] = useState('');
@@ -119,6 +125,11 @@ export default function KasseClient() {
               <label className={labelCls}>{tx('checkout.plz')} *<input required value={form.plz} onChange={set('plz')} className={inputCls} /></label>
               <label className={labelCls}>{tx('checkout.ort')} *<input required value={form.ort} onChange={set('ort')} className={inputCls} /></label>
             </div>
+            <label className={labelCls}>{tx('checkout.land')} *
+              <select required value={form.land} onChange={set('land')} className={inputCls}>
+                {LAENDER.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </label>
             <label className={labelCls}>{tx('checkout.notes')}<textarea rows={3} value={form.notes} onChange={set('notes')} className={inputCls} placeholder={tx('checkout.notesPh')} /></label>
 
             <p className="m-0 text-[13px] text-textsec bg-sectionlight border border-linegray px-4 py-3">
