@@ -6,7 +6,7 @@ import { useT } from '@/components/LocaleProvider';
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
 
-export default function KontaktClient({ kategorie = '', produkt = '' }) {
+export default function KontaktClient({ kategorie = '', produkt = '', zeichnung = '' }) {
   const t = useT();
   const [form, setForm] = useState({
     name: '',
@@ -16,6 +16,7 @@ export default function KontaktClient({ kategorie = '', produkt = '' }) {
     kategorie,
     produkt,
     nachricht: '',
+    zeichnung,
   });
   const [status, setStatus] = useState('idle'); // idle | sending | ok | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -143,6 +144,11 @@ export default function KontaktClient({ kategorie = '', produkt = '' }) {
                 className={inputCls}
               />
             </label>
+            {form.zeichnung && (
+              <p className="m-0 text-[13px] font-semibold text-charcoal bg-sectionlight border border-linegray px-4 py-3">
+                {t('contact.zeichnungAttached')}
+              </p>
+            )}
             {status !== 'ok' && (
               <button
                 type="submit"

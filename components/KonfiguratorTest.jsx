@@ -506,6 +506,31 @@ export default function KonfiguratorTest() {
     set({ logoName: '', logoUrl: '', logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '' });
   };
 
+  // Detaillierte Projektzeichnung (nur bei angebotspflichtiger Montage/Untergrund):
+  // Upload in den uploads-Bucket, wird als Positions-Datei an die Bestellung/Anfrage gehängt.
+  const [projektFile, setProjektFile] = useState(null); // { name, url }
+  const [projektBusy, setProjektBusy] = useState(false);
+  const [projektErr, setProjektErr] = useState(false);
+
+  const onProjektFile = async (file) => {
+    if (!file) return;
+    setProjektErr(false);
+    if (file.size > 20 * 1024 * 1024 || !/\.(pdf|png|jpe?g|svg|ai|eps|dwg|dxf|zip)$/i.test(file.name)) { setProjektErr(true); return; }
+    setProjektBusy(true);
+    try {
+      const path = `projekte/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { error } = await supabase.storage.from('uploads').upload(path, file, { upsert: false });
+      const url = error ? null : supabase.storage.from('uploads').getPublicUrl(path).data.publicUrl;
+      if (!url) { setProjektErr(true); setProjektBusy(false); return; }
+      setProjektFile({ name: file.name, url });
+    } catch {
+      setProjektErr(true);
+    }
+    setProjektBusy(false);
+  };
+
+  const removeProjekt = () => { setProjektFile(null); setProjektErr(false); };
+
   // Pflicht-Bestätigung, wenn die Buchstabenhöhe die Flächenhöhe komplett ausfüllt
   const [flushOk, setFlushOk] = useState(false);
 
@@ -661,17 +686,24 @@ export default function KonfiguratorTest() {
     if (!price || needFlushConfirm || areaTooSmall || configIncomplete) return;
     // Hochgeladene Kundenschrift als Positions-Datei anhängen (falls Storage-Upload gelang)
     const fontFile = sel.fontId === 'custom' && customFont?.url ? { fileUrl: customFont.url, fileName: customFont.name } : {};
-    addItem({ categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: t('konfig3.itemName'), detail: detail3(sel), unitPrice: price.total, konfig: cfg, oversize, quoteOnly, ...fontFile });
+    // Projektzeichnung nur bei angebotspflichtiger Auswahl (Teklif İste). Sie hat Vorrang
+    // vor der Kundenschrift für den Datei-Slot; ist beides vorhanden, wird die Schrift
+    // in der Bemerkung bewahrt, damit nichts verloren geht.
+    const zeichnung = quoteOnly && projektFile?.url ? { fileUrl: projektFile.url, fileName: projektFile.name } : {};
+    const attach = zeichnung.fileUrl ? zeichnung : fontFile;
+    const noteExtra = zeichnung.fileUrl && fontFile.fileUrl ? { note: `Kundenschrift: ${fontFile.fileName} — ${fontFile.fileUrl}` } : {};
+    addItem({ categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: t('konfig3.itemName'), detail: detail3(sel), unitPrice: price.total, konfig: cfg, oversize, quoteOnly, ...attach, ...noteExtra });
     // Warenkorb ist eine eigene Seite (kein Drawer mehr) → direkt hin navigieren
     setAdded(true);
     router.push('/warenkorb');
   };
   const reset = () => {
-    setSel({ ...DEFAULTS, text: t('konfig3.defaultText') }); setLogoFile(null); setLogoErr(false); setFlushOk(false);
+    setSel({ ...DEFAULTS, text: t('konfig3.defaultText') }); setLogoFile(null); setLogoErr(false); setFlushOk(false); setProjektFile(null); setProjektErr(false);
     try { localStorage.removeItem('kh-konfig'); } catch { /* egal — wird beim nächsten sel-Save überschrieben */ }
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const inquiryHref = `/kontakt?kategorie=werbetechnik&produkt=${encodeURIComponent('3D-Buchstaben: ' + detail3(sel).slice(0, 150))}`;
+  const inquiryHref = `/kontakt?kategorie=werbetechnik&produkt=${encodeURIComponent('3D-Buchstaben: ' + detail3(sel).slice(0, 150))}`
+    + (quoteOnly && projektFile?.url ? `&zeichnung=${encodeURIComponent(projektFile.url)}` : '');
 
   const openPdf = () => {
     const rows = summaryRows(sel, price, size, t);
@@ -1221,6 +1253,24 @@ export default function KonfiguratorTest() {
               <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdf3e6] text-[#9a6414] border border-[#d9a441]/50">
                 <Info size={15} className="flex-shrink-0 mt-0.5" />
                 <span>{t('konfig3.traegerNote')}</span>
+              </div>
+            )}
+            {/* Detaillierte Projektzeichnung — nur bei angebotspflichtiger Auswahl (Teklif İste),
+                ganz unten in der Montage-Sektion. Datei wird an die Anfrage/Bestellung gehängt. */}
+            {quoteOnly && (
+              <div className={`${box} px-4 py-4 flex flex-col gap-3 mt-1`}>
+                <span className="text-[14px] font-extrabold text-charcoal">{t('konfig3.zeichnungTitle')}</span>
+                <p className="m-0 text-[13px] text-textsec">{t('konfig3.zeichnungHint')}</p>
+                <label className={`flex items-center justify-center gap-2 px-3 py-3 text-[13px] font-bold border-2 border-dashed cursor-pointer ${projektFile ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
+                  <Upload size={15} className="text-accent flex-shrink-0" />
+                  {projektBusy ? t('konfig3.zeichnungBusy') : projektFile ? `✓ ${projektFile.name}` : t('konfig3.zeichnungBtn')}
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.svg,.ai,.eps,.dwg,.dxf,.zip" className="hidden"
+                    onChange={(e) => { onProjektFile(e.target.files && e.target.files[0]); e.target.value = ''; }} />
+                </label>
+                {projektErr && <span className="text-[12px] text-warnred font-semibold">{t('konfig3.zeichnungErr')}</span>}
+                {projektFile && (
+                  <button onClick={removeProjekt} className="self-start text-[12px] font-semibold text-warnred underline cursor-pointer bg-transparent border-0">{t('konfig3.zeichnungRemove')}</button>
+                )}
               </div>
             )}
           </section>

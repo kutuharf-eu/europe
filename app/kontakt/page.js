@@ -16,7 +16,7 @@ export default async function KontaktPage({ searchParams }) {
       <div className="h-2 bg-accent" />
       <SiteNav />
       <div className="kh-beams">
-        <KontaktClient kategorie={params.kategorie || ''} produkt={params.produkt || ''} />
+        <KontaktClient kategorie={params.kategorie || ''} produkt={params.produkt || ''} zeichnung={params.zeichnung || ''} />
       </div>
       <SiteFooter />
     </div>

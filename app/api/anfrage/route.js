@@ -14,10 +14,13 @@ export async function POST(request) {
     return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 });
   }
 
-  const { name, firma, email, telefon, kategorie, produkt, nachricht } = body || {};
+  const { name, firma, email, telefon, kategorie, produkt, nachricht, zeichnung } = body || {};
   if (!name || !email || !nachricht) {
     return Response.json({ error: 'Bitte Name, E-Mail und Nachricht ausfüllen.' }, { status: 400 });
   }
+  // Projektzeichnung nur aus unserem eigenen Upload-Bucket akzeptieren
+  const uploadPrefix = `${process.env.SUPABASE_URL}/storage/v1/object/public/uploads/`;
+  const safeZeichnung = typeof zeichnung === 'string' && zeichnung.startsWith(uploadPrefix) ? zeichnung.slice(0, 500) : null;
   for (const [key, limit] of Object.entries(MAX)) {
     if (body[key] && String(body[key]).length > limit) {
       return Response.json({ error: 'Eingabe zu lang.' }, { status: 400 });
@@ -45,7 +48,8 @@ export async function POST(request) {
       telefon: telefon ? String(telefon).trim() : null,
       kategorie: kategorie ? String(kategorie).trim() : null,
       produkt: produkt ? String(produkt).trim() : null,
-      nachricht: String(nachricht).trim(),
+      // Projektzeichnung-URL wird an die Nachricht gehängt (kein Schema-Zwang auf kutuharf_anfragen)
+      nachricht: String(nachricht).trim() + (safeZeichnung ? `\n\nProjektzeichnung: ${safeZeichnung}` : ''),
     }),
   });
 
@@ -78,6 +82,7 @@ export async function POST(request) {
             `Telefon: ${telefon || '—'}`,
             `Kategorie: ${kategorie || '—'}`,
             `Produkt / Thema: ${produkt || '—'}`,
+            safeZeichnung ? `Projektzeichnung: ${safeZeichnung}` : null,
             '',
             nachricht,
             '',

@@ -10,12 +10,6 @@ import { useT } from '@/components/LocaleProvider';
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
 
-const LAENDER = [
-  'Deutschland', 'Österreich', 'Schweiz', 'Belgien', 'Niederlande', 'Luxemburg',
-  'Frankreich', 'Italien', 'Spanien', 'Dänemark', 'Polen', 'Tschechien',
-  'Schweden', 'Türkei',
-];
-
 export default function KasseClient() {
   const tx = useT();
   const { items, reseller, clear } = useCartStore();
@@ -24,7 +18,10 @@ export default function KasseClient() {
   // Grundplatte/Tragprofil): Online-Zahlung gesperrt — automatisch Angebots-Anfrage.
   const hasOversize = items.some((i) => i.oversize || i.quoteOnly);
   const onlyQuoteOpts = hasOversize && !items.some((i) => i.oversize);
-  const [form, setForm] = useState({ name: '', firma: '', email: '', telefon: '', strasse: '', plz: '', ort: '', land: 'Deutschland', notes: '' });
+  // Projektzeichnung eines angebotspflichtigen Postens an die Anfrage weiterreichen
+  const quoteZeichnung = items.find((i) => i.quoteOnly && i.konfig && i.fileUrl)?.fileUrl || '';
+  const quoteHref = `/kontakt?kategorie=werbetechnik${quoteZeichnung ? `&zeichnung=${encodeURIComponent(quoteZeichnung)}` : ''}`;
+  const [form, setForm] = useState({ name: '', firma: '', email: '', telefon: '', strasse: '', plz: '', ort: '', land: '', notes: '' });
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [orderNo, setOrderNo] = useState('');
@@ -125,11 +122,7 @@ export default function KasseClient() {
               <label className={labelCls}>{tx('checkout.plz')} *<input required value={form.plz} onChange={set('plz')} className={inputCls} /></label>
               <label className={labelCls}>{tx('checkout.ort')} *<input required value={form.ort} onChange={set('ort')} className={inputCls} /></label>
             </div>
-            <label className={labelCls}>{tx('checkout.land')} *
-              <select required value={form.land} onChange={set('land')} className={inputCls}>
-                {LAENDER.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </label>
+            <label className={labelCls}>{tx('checkout.land')} *<input required value={form.land} onChange={set('land')} className={inputCls} /></label>
             <label className={labelCls}>{tx('checkout.notes')}<textarea rows={3} value={form.notes} onChange={set('notes')} className={inputCls} placeholder={tx('checkout.notesPh')} /></label>
 
             <p className="m-0 text-[13px] text-textsec bg-sectionlight border border-linegray px-4 py-3">
@@ -161,7 +154,7 @@ export default function KasseClient() {
                 <p className="m-0 text-[14px] text-warnred bg-[#fdeceb] border border-warnred/40 px-4 py-3">
                   {onlyQuoteOpts ? tx('cart.quoteBlock') : tx('cart.oversizeBlock', { max: KONFIG_LIMITS.quoteHeight })}
                 </p>
-                <Link href="/kontakt?kategorie=werbetechnik" className="self-start bg-charcoal text-white text-base font-semibold px-8 py-4 hover:brightness-90">
+                <Link href={quoteHref} className="self-start bg-charcoal text-white text-base font-semibold px-8 py-4 hover:brightness-90">
                   {tx('cart.oversizeQuote')}
                 </Link>
               </div>

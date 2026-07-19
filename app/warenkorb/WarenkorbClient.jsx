@@ -89,14 +89,19 @@ export default function WarenkorbClient() {
                     {i.fileUrl ? (
                       <div className="flex items-center justify-between text-[13px]">
                         <span className="text-charcoal font-semibold truncate">✓ {i.fileName}</span>
-                        <button
-                          onClick={() => setItemMeta(i.key, { fileUrl: null, fileName: null })}
-                          className="text-warnred bg-transparent border-none cursor-pointer text-[13px] hover:underline flex-shrink-0"
-                        >
-                          {tx('common.remove')}
-                        </button>
+                        {/* Konfigurator-Dateien (Zeichnung/Kundenschrift) kommen aus dem
+                            Konfigurator und bleiben hier schreibgeschützt. */}
+                        {!i.konfig && (
+                          <button
+                            onClick={() => setItemMeta(i.key, { fileUrl: null, fileName: null })}
+                            className="text-warnred bg-transparent border-none cursor-pointer text-[13px] hover:underline flex-shrink-0"
+                          >
+                            {tx('common.remove')}
+                          </button>
+                        )}
                       </div>
-                    ) : (
+                    ) : i.konfig ? null : (
+                      /* Baskı-Upload nur für Nicht-Konfigurator-Produkte (Druckprodukte) */
                       <label className="flex items-center gap-2 text-[13px] font-semibold text-accent cursor-pointer hover:underline">
                         <Upload size={14} />
                         {uploadingKey === i.key ? tx('cart.uploading') : tx('cart.uploadPrompt')}
