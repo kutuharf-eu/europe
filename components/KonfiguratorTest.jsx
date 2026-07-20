@@ -188,7 +188,8 @@ function Head({ n, icon: Icon, children }) {
 
 // Yapışkan adım çubuğu (hero mockup'ındaki 1–7 şeridi, bizim akışa uyarlanmış):
 // scroll konumuna göre aktif adım yanar, tıklayınca ilgili bölüme kayar. Salt görsel.
-const STEP_KEYS = ['secText', 'secArea', 'secLogo', 'secVector', 'secType', 'secMontage', 'secResult'];
+// Sıra bölüm numaralarıyla (Head n → id kh-step-n) eşleşmeli: 1 Yazı, 2 Ölçü, 3 Vektör, 4 Tabela, 5 Logo, 6 Montaj, 7 Sonuç.
+const STEP_KEYS = ['secText', 'secArea', 'secVector', 'secType', 'secLogo', 'secMontage', 'secResult'];
 
 function StepBar() {
   const t = useT();
