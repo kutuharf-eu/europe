@@ -1,4 +1,4 @@
-import { findProduct, VAT_RATE, SHIPPING_COST, FREE_SHIPPING_FROM, DISCOUNT_CODES, DATENCHECK_PRICE, codeDiscountAmount, discountLabel, sonderDiscountAmount, sonderLabel } from '@/data/categories';
+import { findProduct, VAT_RATE, SHIPPING_COST, FREE_SHIPPING_FROM, DATENCHECK_PRICE } from '@/data/categories';
 import { konfigDetail, KONFIG_LIMITS, normalizeLightColor, normalizeColor, normalizeChromeFinish, normalizeRal } from '@/data/konfigurator';
 import { serverKonfigPrice } from '@/lib/live-pricing';
 import { sanitizeV3Config, deriveV3PricingConfig, detailV3 } from '@/data/konfigurator3';
@@ -8,8 +8,7 @@ const round2 = (n) => Math.round(n * 100) / 100;
 const fmt = (n) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
 // KUTUHARF hat keinen Händlerbereich — der frühere resellers-Lookup (restaurantspezial-
-// Erbe) ist entfernt; die Supabase-DB wird mit restaurantspezial GETEILT, ein Lookup
-// würde deren Händlerdaten treffen.
+// Erbe) ist entfernt und der Rabatt bleibt immer 0.
 async function resellerRate() {
   return 0;
 }
@@ -26,7 +25,7 @@ export async function POST(request) {
     return Response.json({ error: 'Ungültige Anfrage.' }, { status: 400 });
   }
 
-  const { name, firma, email, telefon, strasse, plz, ort, land, items, resellerEmail, discountCode, sonder, logoUrl, notes } = body || {};
+  const { name, firma, email, telefon, strasse, plz, ort, land, items, resellerEmail, logoUrl, notes } = body || {};
   const safeLand = land ? String(land).trim().slice(0, 80) : null;
 
   // Nur Uploads aus unserem eigenen Storage-Bucket akzeptieren
@@ -74,13 +73,17 @@ export async function POST(request) {
       if (s.config.logoUrl && !s.config.logoUrl.startsWith(uploadPrefix)) delete s.config.logoUrl;
       const priceCfg = deriveV3PricingConfig(s.config);
       if (!priceCfg) return Response.json({ error: 'Ungültige Konfiguration.' }, { status: 400 });
+      // addon: bağımsız ek ürün (ayrı eklenen logo/çubuk kalemi) → proje-seviyesi
+      // ücretler (ambalaj, minimum, montaj, trafo) uygulanmaz. GÜVENLİK: yalnız harfsiz
+      // (metinsiz) kalemde geçerli — metinli (harf) kalem addon ile ücret atlayamaz.
+      const addon = item.addon === true && !s.config.text;
       // Preis serverseitig über die Live-Preisbrücke (Motor, Fallback: Legacy-Formel) —
       // exakt dieselbe Funktion wie /api/price, damit Anzeige und Bestellung übereinstimmen.
-      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone });
+      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone }, { addon });
       if (!p) return Response.json({ error: 'Ungültige Konfiguration.' }, { status: 400 });
       // Gespeichert werden nur geprüfte Produktionsfelder + serverseitig
       // abgeleitete Preis-IDs (Client-lightingId/constructionId werden ignoriert).
-      const cfg = { ...s.config, v3: true, lightingId: priceCfg.lightingId, constructionId: priceCfg.constructionId, trafo: priceCfg.trafo };
+      const cfg = { ...s.config, v3: true, addon, lightingId: priceCfg.lightingId, constructionId: priceCfg.constructionId, trafo: priceCfg.trafo };
       recalc.push({
         name: '3D-Buchstaben nach Maß',
         categorySlug: 'werbetechnik',
@@ -172,21 +175,15 @@ export async function POST(request) {
   }
 
   const rate = await resellerRate(resellerEmail);
-  const codeRaw = discountCode ? String(discountCode).trim().toUpperCase() : null;
-  const code = codeRaw && DISCOUNT_CODES[codeRaw] ? codeRaw : null;
-  // Sonderrabatt validieren: { kind: 'percent'|'fixed', value > 0 }, Prozent max. 100
-  let sonderDef = null;
-  if (sonder && (sonder.kind === 'percent' || sonder.kind === 'fixed')) {
-    const v = Number(sonder.value);
-    if (isFinite(v) && v > 0 && (sonder.kind !== 'percent' || v <= 100)) {
-      sonderDef = { kind: sonder.kind, value: Math.round(v * 100) / 100 };
-    }
-  }
+  // Rabatt-Eingaben vom Client werden serverseitig NICHT akzeptiert: KUTUHARF hat
+  // keinen Admin-/Händler-/Gutschein-Rabattfluss und kein UI setzt einen Rabatt.
+  // Ein injizierter discountCode/sonder-Wert darf den Bestellwert nie mindern.
+  const code = null;
 
   const subtotal = round2(recalc.reduce((s, i) => s + i.lineTotal, 0));
   const discount = round2(subtotal * (rate / 100));
-  const codeDiscount = code ? codeDiscountAmount(subtotal - discount, code) : 0;
-  const sonderDiscount = sonderDef ? sonderDiscountAmount(subtotal - discount - codeDiscount, sonderDef) : 0;
+  const codeDiscount = 0;
+  const sonderDiscount = 0;
   const afterDiscount = round2(subtotal - discount - codeDiscount - sonderDiscount);
   const shipping = afterDiscount >= FREE_SHIPPING_FROM ? 0 : SHIPPING_COST;
   const vat = round2((afterDiscount + shipping) * VAT_RATE);
@@ -194,8 +191,8 @@ export async function POST(request) {
 
   const orderNo = 'KH-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
 
-  // Geteilte Supabase-DB (restaurantspezial-Projekt): kutuharf-Bestellungen leben in
-  // kutuharf_orders — NIE in der orders-Tabelle von restaurantspezial.
+  // Eigene Supabase-DB von kutuharf.eu (Projekt zlyoiterlgdevxumfkwc): Bestellungen
+  // leben in kutuharf_orders (alle Tabellen sind kutuharf_*-präfixiert).
   const cleanNotes = notes ? String(notes).slice(0, 2000) : null;
   const orderRow = {
     order_no: orderNo,
@@ -214,7 +211,7 @@ export async function POST(request) {
     discount_code: code,
     code_discount: codeDiscount,
     sonder_discount: sonderDiscount,
-    sonder_note: sonderDef ? sonderLabel(sonderDef) : null,
+    sonder_note: null,
     logo_url: safeLogoUrl,
     shipping_cost: shipping,
     vat_amount: vat,
@@ -271,8 +268,6 @@ export async function POST(request) {
     '',
     `Zwischensumme (netto): ${fmt(subtotal)}`,
     rate > 0 ? `Händlerrabatt (${rate}%): −${fmt(discount)}` : null,
-    codeDiscount > 0 ? `Rabattcode ${code} (${discountLabel(code)}): −${fmt(codeDiscount)}` : null,
-    sonderDiscount > 0 ? `Sonderrabatt (${sonderLabel(sonderDef)}): −${fmt(sonderDiscount)}` : null,
     `Versand: ${shipping === 0 ? 'kostenlos' : fmt(shipping)}`,
     `MwSt. 19%: ${fmt(vat)}`,
     `Gesamt: ${fmt(total)}`,

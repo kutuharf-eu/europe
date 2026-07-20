@@ -1,7 +1,7 @@
 'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SHIPPING_COST, FREE_SHIPPING_FROM, VAT_RATE, DATENCHECK_PRICE, codeDiscountAmount, sonderDiscountAmount } from '@/data/categories';
+import { SHIPPING_COST, FREE_SHIPPING_FROM, VAT_RATE, DATENCHECK_PRICE } from '@/data/categories';
 
 // Ein Warenkorb-Eintrag: { key, categorySlug, productSlug, name, detail, unitPrice, qty }
 // detail = Variantenlabel oder Maßangabe; unitPrice = Netto-Listenpreis (ohne Händlerrabatt).
@@ -9,9 +9,7 @@ export const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
-      reseller: null, // { email, rate } — im Händlerportal gesetzt
-      discount: null, // { code } — eingelöster Rabattcode (Typ/Wert kommen aus DISCOUNT_CODES)
-      sonder: null, // { kind: 'percent'|'fixed', value } — frei vereinbarter Sonderrabatt
+      reseller: null, // { email, rate } — im Händlerportal gesetzt (bei KUTUHARF derzeit ungenutzt)
 
       addItem: (item) =>
         set((s) => {
@@ -43,25 +41,21 @@ export const useCartStore = create(
         set((s) => ({
           items: qty < 1 ? s.items.filter((i) => i.key !== key) : s.items.map((i) => (i.key === key ? { ...i, qty } : i)),
         })),
-      clear: () => set({ items: [], discount: null, sonder: null }),
+      clear: () => set({ items: [] }),
       setReseller: (reseller) => set({ reseller }),
-      setDiscount: (discount) => set({ discount }),
-      setSonder: (sonder) => set({ sonder }),
     }),
     { name: 'rs-cart' }
   )
 );
 
-export const cartTotals = (items, resellerRate = 0, code = null, sonder = null) => {
+export const cartTotals = (items, resellerRate = 0) => {
   const datencheckCount = items.filter((i) => i.datencheck).length;
   const datencheckTotal = datencheckCount * DATENCHECK_PRICE;
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.qty, 0) + datencheckTotal;
   const discount = subtotal * (resellerRate / 100);
-  const codeDiscount = code ? codeDiscountAmount(subtotal - discount, code) : 0;
-  const sonderDiscount = sonder ? sonderDiscountAmount(subtotal - discount - codeDiscount, sonder) : 0;
-  const afterDiscount = subtotal - discount - codeDiscount - sonderDiscount;
+  const afterDiscount = subtotal - discount;
   const shipping = items.length === 0 || afterDiscount >= FREE_SHIPPING_FROM ? 0 : SHIPPING_COST;
   const vat = (afterDiscount + shipping) * VAT_RATE;
   const total = afterDiscount + shipping + vat;
-  return { subtotal, datencheckCount, datencheckTotal, discount, codeDiscount, sonderDiscount, afterDiscount, shipping, vat, total };
+  return { subtotal, datencheckCount, datencheckTotal, discount, afterDiscount, shipping, vat, total };
 };

@@ -8,13 +8,9 @@ import { KONFIG_LIMITS } from '@/data/konfigurator';
 import { supabase } from '@/utils/supabaseClient';
 import { useT } from '@/components/LocaleProvider';
 
-const SERVICES = [
-  { categorySlug: 'druckprodukte', productSlug: 'logo-erstellungsservice', name: 'Logo-Erstellungsservice', detail: 'Professionelles Logo-Design', price: 100, hint: 'Noch kein Logo? Wir gestalten es für Sie.' },
-];
-
 export default function WarenkorbClient() {
   const tx = useT();
-  const { items, removeItem, setQty, setItemMeta, reseller, addItem } = useCartStore();
+  const { items, removeItem, setQty, setItemMeta, reseller } = useCartStore();
   const [uploadingKey, setUploadingKey] = useState(null);
   const [noteKey, setNoteKey] = useState(null);
 
@@ -31,7 +27,7 @@ export default function WarenkorbClient() {
     }
     setUploadingKey(null);
   };
-  const t = cartTotals(items, reseller?.rate || 0, null, null);
+  const t = cartTotals(items, reseller?.rate || 0);
 
   return (
     <main className="px-12 py-14 max-sm:px-6">
@@ -143,23 +139,6 @@ export default function WarenkorbClient() {
                       {tx('cart.datencheck', { price: fmtEur(DATENCHECK_PRICE) })}
                     </label>
                   </div>
-                </div>
-              ))}
-
-              {/* Service-Empfehlungen */}
-              {SERVICES.filter((s) => !items.some((i) => i.productSlug === s.productSlug)).map((s) => (
-                <div key={s.productSlug} className="border border-dashed border-inputline bg-sectionlight p-5 flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="m-0 font-bold text-[15px] text-charcoal">{tx(`product.${s.productSlug}.name`, {}, s.name)}</p>
-                    <span className="font-bold text-[15px] text-charcoal whitespace-nowrap">{fmtEur(s.price)}</span>
-                  </div>
-                  <p className="m-0 text-[13px] text-textmut">{tx('cart.serviceLogoHint', {}, s.hint)}</p>
-                  <button
-                    onClick={() => addItem({ categorySlug: s.categorySlug, productSlug: s.productSlug, name: s.name, detail: s.detail, unitPrice: s.price })}
-                    className="self-start mt-1 text-[14px] font-semibold text-accent bg-transparent border-none cursor-pointer p-0 hover:underline"
-                  >
-                    {tx('cart.serviceAdd')}
-                  </button>
                 </div>
               ))}
             </div>

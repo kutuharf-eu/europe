@@ -84,6 +84,10 @@ body {
 .theme-studio .bg-accent .text-white,
 .theme-studio .bg-accent svg { color: var(--studio-primary-fg); }
 .theme-studio .bg-accent:hover { filter: none; background-color: rgb(var(--kh-accentlite)); }
+/* Hover'da yeşile dolan outline butonlar (hover:bg-accent) — yazı+ikon koyu olsun,
+   yoksa açık „charcoal" (F8FAFC) yeşil zeminde okunmuyor. */
+.theme-studio .hover\:bg-accent:hover,
+.theme-studio .hover\:bg-accent:hover svg { color: var(--studio-primary-fg); }
 
 /* Form elemanları: koyu input yüzeyi + açık metin */
 .theme-studio input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),

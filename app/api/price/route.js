@@ -22,6 +22,10 @@ export async function POST(request) {
     montageId: typeof body.montageId === 'string' ? body.montageId : 'selbst',
     trafo: body.trafo !== false,
     logo: body.logo && typeof body.logo === 'object' ? { widthCm: body.logo.widthCm, heightCm: body.logo.heightCm } : null,
+    logoPrint: body.logoPrint === 'uv' ? 'uv' : null,
+    uvBaski: body.uvBaski === true,
+    logoUv: body.logoUv === true,
+    cubukUv: body.cubukUv === true,
     unbelMaterial: typeof body.unbelMaterial === 'string' ? body.unbelMaterial : undefined,
     chromColor: typeof body.chromColor === 'string' ? body.chromColor : undefined,
     depth: body.depth,
@@ -31,7 +35,9 @@ export async function POST(request) {
       : null,
   };
 
-  const p = await serverKonfigPrice(cfg);
+  // addon: bağımsız ek ürün (ayrı sepete eklenen logo/çubuk) — proje-seviyesi ücretler
+  // (ambalaj, minimum sipariş, montaj) uygulanmaz; yalnız üretim + kendi trafosu.
+  const p = await serverKonfigPrice(cfg, { addon: body.addon === true });
   if (!p) return Response.json({ price: null });
 
   return Response.json({
@@ -41,7 +47,7 @@ export async function POST(request) {
       lettersTotal: p.lettersTotal,
       letterRows: Array.isArray(p.letterRows) ? p.letterRows.map((r) => ({ ch: r.ch, heightCm: r.heightCm, price: r.price })) : null,
       logo: p.logo
-        ? { widthCm: p.logo.widthCm, heightCm: p.logo.heightCm, eqLetters: p.logo.eqLetters, perLetter: p.logo.perLetter, total: p.logo.total }
+        ? { widthCm: p.logo.widthCm, heightCm: p.logo.heightCm, eqLetters: p.logo.eqLetters, perLetter: p.logo.perLetter, total: p.logo.total, print: p.logo.print || null, areaM2: p.logo.areaM2 || null }
         : null,
       cubukLed: p.cubukLed
         ? { lengthCm: p.cubukLed.lengthCm, heightCm: p.cubukLed.heightCm, pieces: p.cubukLed.pieces, eqLetters: p.cubukLed.eqLetters, perLetter: p.cubukLed.perLetter, total: p.cubukLed.total }

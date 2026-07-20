@@ -38,7 +38,7 @@ export const KONFIG_CONSTRUCTIONS = [
 // cat = Filterkategorie im Konfigurator. 'custom' = vom Kunden hochgeladene Schrift.
 export const KONFIG_FONT_CATS = [
   { id: 'alle' }, { id: 'modern' }, { id: 'schmal' }, { id: 'rund' },
-  { id: 'elegant' }, { id: 'schrift' }, { id: 'deko' }, { id: 'tech' },
+  { id: 'elegant' }, { id: 'deko' }, { id: 'tech' },
 ];
 
 export const KONFIG_FONTS = [
@@ -68,12 +68,6 @@ export const KONFIG_FONTS = [
   { id: 'cinzel', label: 'Cinzel', widthFactor: 0.66, cat: 'elegant' },
   { id: 'robotoslab', label: 'Roboto Slab', widthFactor: 0.62, cat: 'elegant' },
   { id: 'alfaslab', label: 'Alfa Slab One', widthFactor: 0.66, cat: 'elegant' },
-  // Schreibschrift (verbunden — schneidbar)
-  { id: 'schrift', label: 'Schreibschrift', widthFactor: 0.55, cat: 'schrift' },
-  { id: 'lobster', label: 'Lobster', widthFactor: 0.52, cat: 'schrift' },
-  { id: 'dancing', label: 'Dancing Script', widthFactor: 0.5, cat: 'schrift' },
-  { id: 'kaushan', label: 'Kaushan Script', widthFactor: 0.55, cat: 'schrift' },
-  { id: 'courgette', label: 'Courgette', widthFactor: 0.52, cat: 'schrift' },
   // Deko / Display
   { id: 'bungee', label: 'Bungee', widthFactor: 0.72, cat: 'deko' },
   { id: 'righteous', label: 'Righteous', widthFactor: 0.6, cat: 'deko' },
@@ -85,6 +79,51 @@ export const KONFIG_FONTS = [
   { id: 'audiowide', label: 'Audiowide', widthFactor: 0.68, cat: 'tech' },
   { id: 'blackops', label: 'Black Ops One', widthFactor: 0.66, cat: 'tech' },
   { id: 'sairastencil', label: 'Saira Stencil One', widthFactor: 0.6, cat: 'tech' },
+  // ── Erweiterung: weitere LED-taugliche Google-Fonts (kräftig/mit Körper) ─────
+  // Bewusst OHNE dünne Schreibschriften — in dünne Konturen passt kein LED-Modul.
+  // Modern (Sans)
+  { id: 'rubik', label: 'Rubik', widthFactor: 0.64, cat: 'modern' },
+  { id: 'worksans', label: 'Work Sans', widthFactor: 0.62, cat: 'modern' },
+  { id: 'barlow', label: 'Barlow', widthFactor: 0.56, cat: 'modern' },
+  { id: 'mulish', label: 'Mulish', widthFactor: 0.6, cat: 'modern' },
+  { id: 'manrope', label: 'Manrope', widthFactor: 0.62, cat: 'modern' },
+  { id: 'sora', label: 'Sora', widthFactor: 0.64, cat: 'modern' },
+  { id: 'exo2', label: 'Exo 2', widthFactor: 0.6, cat: 'modern' },
+  { id: 'lexend', label: 'Lexend', widthFactor: 0.64, cat: 'modern' },
+  { id: 'kanit', label: 'Kanit', widthFactor: 0.56, cat: 'modern' },
+  { id: 'prompt', label: 'Prompt', widthFactor: 0.58, cat: 'modern' },
+  { id: 'jost', label: 'Jost', widthFactor: 0.56, cat: 'modern' },
+  // Schmal (Condensed)
+  { id: 'archivonarrow', label: 'Archivo Narrow', widthFactor: 0.46, cat: 'schmal' },
+  { id: 'barlowcond', label: 'Barlow Condensed', widthFactor: 0.44, cat: 'schmal' },
+  { id: 'sairacond', label: 'Saira Condensed', widthFactor: 0.42, cat: 'schmal' },
+  { id: 'teko', label: 'Teko', widthFactor: 0.42, cat: 'schmal' },
+  { id: 'khand', label: 'Khand', widthFactor: 0.5, cat: 'schmal' },
+  { id: 'rajdhani', label: 'Rajdhani', widthFactor: 0.5, cat: 'schmal' },
+  { id: 'pathwaygothic', label: 'Pathway Gothic One', widthFactor: 0.4, cat: 'schmal' },
+  // Rund & Freundlich
+  { id: 'varelaround', label: 'Varela Round', widthFactor: 0.62, cat: 'rund' },
+  { id: 'chewy', label: 'Chewy', widthFactor: 0.66, cat: 'rund' },
+  { id: 'sniglet', label: 'Sniglet', widthFactor: 0.64, cat: 'rund' },
+  { id: 'paytone', label: 'Paytone One', widthFactor: 0.64, cat: 'rund' },
+  { id: 'concertone', label: 'Concert One', widthFactor: 0.62, cat: 'rund' },
+  // Elegant (Serif / Slab)
+  { id: 'merriweather', label: 'Merriweather', widthFactor: 0.62, cat: 'elegant' },
+  { id: 'lora', label: 'Lora', widthFactor: 0.58, cat: 'elegant' },
+  { id: 'ptserif', label: 'PT Serif', widthFactor: 0.58, cat: 'elegant' },
+  { id: 'zillaslab', label: 'Zilla Slab', widthFactor: 0.56, cat: 'elegant' },
+  { id: 'yeseva', label: 'Yeseva One', widthFactor: 0.56, cat: 'elegant' },
+  { id: 'bitter', label: 'Bitter', widthFactor: 0.58, cat: 'elegant' },
+  // Deko / Display (schwer)
+  { id: 'passionone', label: 'Passion One', widthFactor: 0.5, cat: 'deko' },
+  { id: 'bowlby', label: 'Bowlby One', widthFactor: 0.68, cat: 'deko' },
+  { id: 'ultra', label: 'Ultra', widthFactor: 0.66, cat: 'deko' },
+  { id: 'sigmar', label: 'Sigmar One', widthFactor: 0.66, cat: 'deko' },
+  { id: 'rowdies', label: 'Rowdies', widthFactor: 0.6, cat: 'deko' },
+  { id: 'fugaz', label: 'Fugaz One', widthFactor: 0.56, cat: 'deko' },
+  // Technik
+  { id: 'michroma', label: 'Michroma', widthFactor: 0.74, cat: 'tech' },
+  { id: 'syncopate', label: 'Syncopate', widthFactor: 0.72, cat: 'tech' },
   // Vom Kunden hochgeladene Schrift (TTF/OTF/WOFF) — Datei kommt als Positions-Upload mit.
   { id: 'custom', label: 'Eigene Schrift', widthFactor: 0.66, cat: 'custom', custom: true },
 ];
@@ -165,7 +204,7 @@ export const normalizeLightColor = (id) =>
   KONFIG_LIGHT_COLORS.some((c) => c.id === id) ? id : KONFIG_DEFAULT_LIGHT_COLOR;
 
 // quoteHeight: über dieser Buchstabenhöhe nur Angebot/PDF — Online-Bestellung gesperrt.
-export const KONFIG_LIMITS = { minHeight: 10, maxHeight: 100, maxTextLen: 30, refHeight: 20, quoteHeight: 50 };
+export const KONFIG_LIMITS = { minHeight: 5, maxHeight: 100, maxTextLen: 30, refHeight: 20, quoteHeight: 50 };
 export const NETZTEIL_PRICE = 49;
 
 // ── Logo (optional) ──────────────────────────────────────────────────────────
@@ -197,14 +236,14 @@ export function logoEquivalentLetters(widthCm, heightCm) {
 // Çubuk LED (LED-Leiste): Länge × Höhe (cm) — Materialrechnung wie Logo/Buchstaben
 // (Äquivalenzbuchstaben in Leistenhöhe). Ein STÜCK ist max. 150 cm; die Gesamtlänge
 // wird automatisch in Stücke geteilt (letztes Stück = Rest).
-export const CUBUK_LED_LIMITS = { minCm: 10, maxLen: 1500, maxHeight: KONFIG_LIMITS.maxHeight, pieceMax: 150 };
+export const CUBUK_LED_LIMITS = { minCm: 10, minHeight: 5, maxLen: 1500, maxHeight: KONFIG_LIMITS.maxHeight, pieceMax: 150 };
 export function normalizeCubukLed(led) {
   if (!led || typeof led !== 'object') return null;
   const len = Math.round(Number(led.lengthCm));
   const h = Math.round(Number(led.heightCm));
   if (!Number.isFinite(len) || !Number.isFinite(h)) return null;
   if (len < CUBUK_LED_LIMITS.minCm || len > CUBUK_LED_LIMITS.maxLen) return null;
-  if (h < CUBUK_LED_LIMITS.minCm || h > CUBUK_LED_LIMITS.maxHeight) return null;
+  if (h < CUBUK_LED_LIMITS.minHeight || h > CUBUK_LED_LIMITS.maxHeight) return null;
   return { lengthCm: len, heightCm: h };
 }
 export function cubukLedPieces(lengthCm) {
@@ -274,7 +313,7 @@ export function allowedConstructions(lightMode, lightingId) {
 // Gibt null zurück, wenn die Konfiguration ungültig ist.
 // logo (optional): { widthCm, heightCm } — wird mit derselben Konstruktion &
 // demselben Lichtfaktor wie die Buchstaben berechnet; ungültige Maße → null.
-export function konfigPrice({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, cubukLed }) {
+export function konfigPrice({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, cubukLed }, opts = {}) {
   const h = Number(heightCm);
   const letters = countLetters(text);
   const construction = KONFIG_CONSTRUCTIONS.find((c) => c.id === constructionId);
@@ -285,7 +324,10 @@ export function konfigPrice({ text, heightCm, lightMode, lightingId, constructio
 
   if (!construction || !montage || !font) return null;
   if (lit && !lighting) return null;
-  if (!letters || letters > KONFIG_LIMITS.maxTextLen) return null;
+  // Harfsiz ürün (sadece Logo veya Çubuk LED) da geçerli — o zaman letters=0 olur.
+  const hasComponent = !!(logo || cubukLed);
+  if (letters > KONFIG_LIMITS.maxTextLen) return null;
+  if (!letters && !hasComponent) return null;
   if (!h || h < KONFIG_LIMITS.minHeight || h > KONFIG_LIMITS.maxHeight) return null;
 
   const eff = effectiveLightingId(lightMode, lightingId);
@@ -293,7 +335,8 @@ export function konfigPrice({ text, heightCm, lightMode, lightingId, constructio
 
   const factor = lit ? lighting.factor : 1;
   // Trafo (LED-Netzteil) nur bei Beleuchtung und wenn gewünscht (Standard: inklusive)
-  const trafoIncl = lit && trafo !== false;
+  // addon (bağımsız ek ürün): trafo proje-seviyesi → ek üründe uygulanmaz (ana kalemde bir kez).
+  const trafoIncl = lit && trafo !== false && !opts.addon;
   const netzteil = trafoIncl ? NETZTEIL_PRICE : 0;
   const perLetter = round2(construction.base * (h / KONFIG_LIMITS.refHeight) * factor);
   const lettersTotal = round2(perLetter * letters);
@@ -303,9 +346,15 @@ export function konfigPrice({ text, heightCm, lightMode, lightingId, constructio
   if (logo) {
     const lg = normalizeLogo(logo);
     if (!lg) return null;
-    const eq = logoEquivalentLetters(lg.widthCm, lg.heightCm);
-    const logoPerLetter = round2(construction.base * (lg.heightCm / KONFIG_LIMITS.refHeight) * factor);
-    logoInfo = { ...lg, eqLetters: eq, perLetter: logoPerLetter, total: round2(logoPerLetter * eq) };
+    if (logoPrint === 'uv') {
+      // Baskı logo (legacy tahmini): m² × 10 € varsayılan — motor gerçek admin fiyatıyla değiştirir.
+      const areaM2 = (lg.widthCm / 100) * (lg.heightCm / 100);
+      logoInfo = { ...lg, print: logoPrint, eqLetters: 0, perLetter: 0, total: round2(areaM2 * 10) };
+    } else {
+      const eq = logoEquivalentLetters(lg.widthCm, lg.heightCm);
+      const logoPerLetter = round2(construction.base * (lg.heightCm / KONFIG_LIMITS.refHeight) * factor);
+      logoInfo = { ...lg, eqLetters: eq, perLetter: logoPerLetter, total: round2(logoPerLetter * eq) };
+    }
   }
 
   // Çubuk LED: aynı malzeme hesabı — uzunluk = genişlik, kendi yüksekliğinde eşdeğer harf.
@@ -318,9 +367,11 @@ export function konfigPrice({ text, heightCm, lightMode, lightingId, constructio
     cubukInfo = { ...cl, pieces: cubukLedPieces(cl.lengthCm), eqLetters: eq, perLetter: clPerLetter, total: round2(clPerLetter * eq) };
   }
 
-  const total = round2(lettersTotal + (logoInfo ? logoInfo.total : 0) + (cubukInfo ? cubukInfo.total : 0) + netzteil + montage.price);
+  // addon (bağımsız ek ürün): montaj proje-seviyesi kalem → ek üründe uygulanmaz.
+  const montagePrice = opts.addon ? 0 : montage.price;
+  const total = round2(lettersTotal + (logoInfo ? logoInfo.total : 0) + (cubukInfo ? cubukInfo.total : 0) + netzteil + montagePrice);
 
-  return { letters, perLetter, lettersTotal, logo: logoInfo, cubukLed: cubukInfo, netzteil, montage: montage.price, total, construction, lighting, font, montageOpt: montage };
+  return { letters, perLetter, lettersTotal, logo: logoInfo, cubukLed: cubukInfo, netzteil, montage: montagePrice, total, construction, lighting, font, montageOpt: montage };
 }
 
 // Beschreibung der gewählten Materialfarben je nach Konstruktion.

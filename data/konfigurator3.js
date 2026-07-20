@@ -219,6 +219,12 @@ export function buildCfg(sel) {
     bohrschablone: sel.bohrschablone === true, // Montaj Delme Şablonu (bağımsız ek ürün)
     trafo: lit,
     logo,
+    // Logo türü: '3d' (harflerle aynı kutu mantığı) | 'uv' (düz baskı, m² fiyatı)
+    logoPrint: sel.logoMode === 'uv' ? 'uv' : null,
+    // UV Baskı: ön yüze baskı. Fiyat/gerçeklik kapısı motorda (yalnız face=pleksi_oto).
+    uvBaski: sel.uvBaski === true,
+    logoUv: sel.logoUv === true, // UV baskı (logo) — motorda face=pleksi kapısıyla uygulanır
+    cubukUv: sel.cubukUv === true, // UV baskı (çubuk LED)
     cubukLed,
     // Spezifikation (Anzeige/Detail)
     v3: true,
@@ -268,14 +274,28 @@ const chromTxt = (color, surface, ral) => [
 ].filter(Boolean).join(' · ');
 
 // Menschlich lesbare Zusammenfassung (Deutsch).
+// Ürün başlığı: metin varsa metin, yoksa harfsiz ürünün türü (Logo / LED-Leiste / ikisi).
+export function productTitle(cfg) {
+  if (cfg.text) return cfg.text;
+  if (cfg.logo && cfg.cubukLed) return 'Logo + LED-Leiste';
+  if (cfg.logo) return 'Logo';
+  if (cfg.cubukLed) return 'LED-Leiste';
+  return '';
+}
+
 export function detail3(sel) {
   const cfg = buildCfg(sel);
   const size = estimateSize(cfg);
-  const p = [`„${cfg.text}"`, `${cfg.heightCm} cm`];
-  if (size) p.push(`ca. ${size.widthCm}×${size.heightCm} cm`);
-  const font = KONFIG_FONTS.find((f) => f.id === sel.fontId);
-  if (font) p.push(`Schrift: ${font.id === 'custom' && sel.customFontName ? `${font.label} (${sel.customFontName})` : font.label}`);
-  if (cfg.logo) p.push(`Logo: ${cfg.logoShape === 'circle' ? `Ø ${cfg.logo.heightCm}` : `${cfg.logo.widthCm}×${cfg.logo.heightCm}`} cm${sel.logoName ? ` (${sel.logoName})` : ''}`);
+  const p = [];
+  if (cfg.text) {
+    p.push(`„${cfg.text}"`, `${cfg.heightCm} cm`);
+    if (size) p.push(`ca. ${size.widthCm}×${size.heightCm} cm`);
+    const font = KONFIG_FONTS.find((f) => f.id === sel.fontId);
+    if (font) p.push(`Schrift: ${font.id === 'custom' && sel.customFontName ? `${font.label} (${sel.customFontName})` : font.label}`);
+  } else {
+    p.push(productTitle(cfg)); // harfsiz: Logo / LED-Leiste
+  }
+  if (cfg.logo) p.push(`Logo${cfg.logoPrint === 'uv' ? ' (UV-Druck)' : ''}: ${cfg.logoShape === 'circle' ? `Ø ${cfg.logo.heightCm}` : `${cfg.logo.widthCm}×${cfg.logo.heightCm}`} cm${sel.logoName ? ` (${sel.logoName})` : ''}`);
   if (cfg.cubukLed) p.push(`LED-Leiste: ${cfg.cubukLed.lengthCm}×${cfg.cubukLed.heightCm} cm (${cubukLedPieces(cfg.cubukLed.lengthCm).join(' + ')} cm)`);
 
   if (sel.lit === 'unbeleuchtet') {
@@ -380,8 +400,9 @@ export function sanitizeV3Config(raw) {
   if (lightMode === 'beleuchtet' || lightMode === 'unbeleuchtet') out.lightMode = lightMode;
   else errors.push('lightMode');
 
-  const text = String(r.text ?? '').trim().slice(0, KONFIG_LIMITS.maxTextLen);
-  if (text) out.text = text; else errors.push('text');
+  // Harfsiz ürün (sadece Logo veya Çubuk LED) da geçerli — metin boş olabilir.
+  // Bileşen kontrolü Logo/Çubuk doğrulandıktan SONRA aşağıda yapılır.
+  out.text = String(r.text ?? '').trim().slice(0, KONFIG_LIMITS.maxTextLen);
 
   const h = Number(r.heightCm);
   if (Number.isFinite(h) && h >= KONFIG_LIMITS.minHeight && h <= KONFIG_LIMITS.maxHeight) out.heightCm = Math.round(h);
@@ -393,6 +414,10 @@ export function sanitizeV3Config(raw) {
   reqEnum(KONFIG_MONTAGE, r.montageId, 'montageId', out, errors);
   // Montaj Delme Şablonu: bağımsız, opsiyonel ek ürün (boolean).
   out.bohrschablone = r.bohrschablone === true;
+  // UV Baskı: ön yüze baskı (yalnız önden akrilik ürünlerde geçerli — gerçeklik kapısı motorda).
+  out.uvBaski = r.uvBaski === true;
+  out.logoUv = r.logoUv === true;
+  out.cubukUv = r.cubukUv === true;
 
   // Optionales Logo: wenn angegeben, müssen beide Maße gültig sein (preisrelevant).
   // logoUrl wird hier nur größenbegrenzt — die Bucket-Prüfung macht /api/order.
@@ -402,6 +427,8 @@ export function sanitizeV3Config(raw) {
     else {
       out.logo = lg;
       out.logoShape = r.logoShape === 'circle' ? 'circle' : 'rect';
+      // Baskı logo türü (UV). Yoksa 3D kutu logo (varsayılan).
+      if (r.logoPrint === 'uv') out.logoPrint = 'uv';
       if (r.logoUrl) out.logoUrl = String(r.logoUrl).slice(0, 500);
       if (r.logoName) out.logoName = String(r.logoName).trim().slice(0, 200);
     }
@@ -469,6 +496,10 @@ export function sanitizeV3Config(raw) {
     }
   }
 
+  // Harfsiz ürün geçerli sayılır ANCAK en az bir bileşen (Logo veya Çubuk LED) olmalı;
+  // metin de yoksa yapılandırma boştur.
+  if (!out.text && !out.logo && !out.cubukLed) errors.push('text');
+
   if (errors.length) return { ok: false, errors };
   return { ok: true, config: out };
 }
@@ -497,7 +528,6 @@ export function deriveV3PricingConfig(c) {
 
   const text = String(c.text ?? '').trim().slice(0, KONFIG_LIMITS.maxTextLen);
   const h = Number(c.heightCm);
-  if (!text) return null;
   if (!Number.isFinite(h) || h < KONFIG_LIMITS.minHeight || h > KONFIG_LIMITS.maxHeight) return null;
   if (!KONFIG_FONTS.some((f) => f.id === c.fontId)) return null;
   if (!KONFIG_MONTAGE.some((m) => m.id === c.montageId)) return null;
@@ -516,6 +546,9 @@ export function deriveV3PricingConfig(c) {
     if (!cubukLed) return null;
   }
 
+  // Harfsiz ürün: metin yoksa en az bir bileşen (Logo/Çubuk LED) olmalı.
+  if (!text && !logo && !cubukLed) return null;
+
   return {
     text,
     heightCm: Math.round(h),
@@ -527,6 +560,10 @@ export function deriveV3PricingConfig(c) {
     bohrschablone: c.bohrschablone === true,
     trafo: lit,
     logo,
+    logoPrint: c.logoPrint === 'uv' ? 'uv' : null,
+    uvBaski: c.uvBaski === true,
+    logoUv: c.logoUv === true,
+    cubukUv: c.cubukUv === true,
     cubukLed,
   };
 }
@@ -537,11 +574,16 @@ export function deriveV3PricingConfig(c) {
 export function detailV3(c) {
   if (!c || typeof c !== 'object') return '';
   const size = estimateSize({ text: c.text, heightCm: c.heightCm, fontId: c.fontId });
-  const p = [`„${c.text}"`, `${c.heightCm} cm`];
-  if (size) p.push(`ca. ${size.widthCm}×${size.heightCm} cm`);
-  const font = KONFIG_FONTS.find((f) => f.id === c.fontId);
-  if (font) p.push(`Schrift: ${font.id === 'custom' && c.customFontName ? `${font.label} (${c.customFontName})` : font.label}`);
-  if (c.logo) p.push(`Logo: ${c.logoShape === 'circle' ? `Ø ${c.logo.heightCm}` : `${c.logo.widthCm}×${c.logo.heightCm}`} cm${c.logoName ? ` (${c.logoName})` : ''}`);
+  const p = [];
+  if (c.text) {
+    p.push(`„${c.text}"`, `${c.heightCm} cm`);
+    if (size) p.push(`ca. ${size.widthCm}×${size.heightCm} cm`);
+    const font = KONFIG_FONTS.find((f) => f.id === c.fontId);
+    if (font) p.push(`Schrift: ${font.id === 'custom' && c.customFontName ? `${font.label} (${c.customFontName})` : font.label}`);
+  } else {
+    p.push(productTitle(c)); // harfsiz: Logo / LED-Leiste
+  }
+  if (c.logo) p.push(`Logo${c.logoPrint === 'uv' ? ' (UV-Druck)' : ''}: ${c.logoShape === 'circle' ? `Ø ${c.logo.heightCm}` : `${c.logo.widthCm}×${c.logo.heightCm}`} cm${c.logoName ? ` (${c.logoName})` : ''}`);
   if (c.cubukLed) p.push(`LED-Leiste: ${c.cubukLed.lengthCm}×${c.cubukLed.heightCm} cm (${cubukLedPieces(c.cubukLed.lengthCm).join(' + ')} cm)`);
 
   if (c.lightMode === 'unbeleuchtet') {

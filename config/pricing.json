@@ -6,6 +6,7 @@
   "dekotaM2": { "amount": 600, "currency": "TRY" },
   "rakiBeyazi8mmM2": { "amount": 5000, "currency": "TRY" },
   "uvBaskiM2": { "amount": 900, "currency": "TRY" },
+  "logoUvBaskiM2": { "amount": 10, "currency": "EUR" },
   "aluFaceM2": null,
   "aluYanBantMt": { "amount": 60, "currency": "TRY" },
   "yanBantDerinlikFarkiYuzde": 0,

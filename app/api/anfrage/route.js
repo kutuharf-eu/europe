@@ -31,8 +31,8 @@ export async function POST(request) {
   }
 
   // Secret Key: anon darf seit dem Security-Lockdown nicht mehr direkt inserten
-  // Geteilte Supabase-DB (restaurantspezial-Projekt): kutuharf-Anfragen leben in
-  // kutuharf_anfragen — NIE in der anfragen-Tabelle von restaurantspezial.
+  // Eigene Supabase-DB von kutuharf.eu (Projekt zlyoiterlgdevxumfkwc): Anfragen leben
+  // in kutuharf_anfragen (alle Tabellen sind kutuharf_*-präfixiert).
   const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/kutuharf_anfragen`, {
     method: 'POST',
     headers: {
@@ -69,8 +69,8 @@ export async function POST(request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Absender: eigene Resend-Domain kutuharf.eu (Konto kutuharf.eu@gmail.com),
-          // DNS-Verifizierung erforderlich — bis dahin schlagen Mails leise fehl (DB speichert trotzdem).
+          // Absender: eigene Resend-Domain kutuharf.eu (verifiziert). Mail-Fehler dürfen
+          // die Anfrage nicht scheitern lassen — die DB ist die Quelle der Wahrheit.
           from: 'KUTUHARF <info@kutuharf.eu>',
           to: ['info@kutuharf.eu'],
           reply_to: String(email).trim(),
@@ -86,7 +86,7 @@ export async function POST(request) {
             '',
             nachricht,
             '',
-            '— kutuharf.de Anfrageformular',
+            '— kutuharf.eu Anfrageformular',
           ].join('\n'),
         }),
       });

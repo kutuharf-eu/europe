@@ -7,21 +7,27 @@ import {
   MessageSquare, FileText, RotateCcw, Check, Info, Image as ImageIcon, ZoomIn, X, Upload, ChevronDown,
 } from 'lucide-react';
 import {
-  Archivo_Black, Playfair_Display, Oswald, Pacifico, Baloo_2,
+  Archivo_Black, Playfair_Display, Oswald, Baloo_2,
   Montserrat, Poppins, Raleway, Russo_One,
   Bebas_Neue, Anton, Fjalla_One, Staatliches,
   Nunito, Quicksand, Comfortaa, Fredoka, Lilita_One,
   Abril_Fatface, DM_Serif_Display, Cinzel, Roboto_Slab, Alfa_Slab_One,
-  Lobster, Dancing_Script, Kaushan_Script, Courgette,
   Bungee, Righteous, Bangers, Luckiest_Guy, Titan_One,
   Orbitron, Audiowide, Black_Ops_One, Saira_Stencil_One,
+  // Erweiterung (LED-taugliche Google-Fonts — kräftig/mit Körper, keine dünnen Schreibschriften)
+  Rubik, Work_Sans, Barlow, Mulish, Manrope, Sora, Exo_2, Lexend, Kanit, Prompt, Jost,
+  Archivo_Narrow, Barlow_Condensed, Saira_Condensed, Teko, Khand, Rajdhani, Pathway_Gothic_One,
+  Varela_Round, Chewy, Sniglet, Paytone_One, Concert_One,
+  Merriweather, Lora, PT_Serif, Zilla_Slab, Yeseva_One, Bitter,
+  Passion_One, Bowlby_One, Ultra, Sigmar_One, Rowdies, Fugaz_One,
+  Michroma, Syncopate,
 } from 'next/font/google';
 import {
   ACRYL_COLORS, CHROM_COLORS, CHROM_SURFACES, CHROM_SIDE_IDS, LIGHT_COLORS, WANDABSTAND,
   SURFACES, DEPTHS, BODY_MAT_RUECK, RUECK_CHROM_IDS, RUECK_LACK_IDS, RUECK_WAND_AKRYL_IDS, BACK_PANELS,
   SIDE_MAT_FRONT, UNBEL_MAT, LIGHT_DIRS, TABELLE_TYPES,
   buildCfg, priceForState, detail3, recommendDepth, sizeAssessment, estimateSize, sanitizeV3Config,
-  KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo, logoEquivalentLetters,
+  KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo,
   normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS,
 } from '@/data/konfigurator3';
 import { maxLetterHeight, KONFIG_FONT_CATS } from '@/data/konfigurator';
@@ -34,7 +40,6 @@ import { useT, useLocale } from '@/components/LocaleProvider';
 const fontModern = Archivo_Black({ weight: '400', subsets: ['latin'] });
 const fontElegant = Playfair_Display({ weight: '700', subsets: ['latin'] });
 const fontSchmal = Oswald({ weight: '600', subsets: ['latin'] });
-const fontSchrift = Pacifico({ weight: '400', subsets: ['latin'] });
 const fontRund = Baloo_2({ weight: '700', subsets: ['latin'] });
 // Weitere Schnittschriften — preload:false, damit nicht 30+ Preload-Links den Seitenstart bremsen
 // (geladen wird erst beim Rendern der Font-Auswahl, display:swap).
@@ -56,10 +61,6 @@ const fDmSerif = DM_Serif_Display({ weight: '400', subsets: ['latin'], preload: 
 const fCinzel = Cinzel({ weight: '700', subsets: ['latin'], preload: false });
 const fRobotoSlab = Roboto_Slab({ weight: '700', subsets: ['latin'], preload: false });
 const fAlfaSlab = Alfa_Slab_One({ weight: '400', subsets: ['latin'], preload: false });
-const fLobster = Lobster({ weight: '400', subsets: ['latin'], preload: false });
-const fDancing = Dancing_Script({ weight: '700', subsets: ['latin'], preload: false });
-const fKaushan = Kaushan_Script({ weight: '400', subsets: ['latin'], preload: false });
-const fCourgette = Courgette({ weight: '400', subsets: ['latin'], preload: false });
 const fBungee = Bungee({ weight: '400', subsets: ['latin'], preload: false });
 const fRighteous = Righteous({ weight: '400', subsets: ['latin'], preload: false });
 const fBangers = Bangers({ weight: '400', subsets: ['latin'], preload: false });
@@ -69,29 +70,77 @@ const fOrbitron = Orbitron({ weight: '700', subsets: ['latin'], preload: false }
 const fAudiowide = Audiowide({ weight: '400', subsets: ['latin'], preload: false });
 const fBlackOps = Black_Ops_One({ weight: '400', subsets: ['latin'], preload: false });
 const fSairaStencil = Saira_Stencil_One({ weight: '400', subsets: ['latin'], preload: false });
+// ── Erweiterte LED-taugliche Schriften (kräftig/mit Körper) ──────────────────
+const fRubik = Rubik({ weight: '700', subsets: ['latin'], preload: false });
+const fWorkSans = Work_Sans({ weight: '700', subsets: ['latin'], preload: false });
+const fBarlow = Barlow({ weight: '700', subsets: ['latin'], preload: false });
+const fMulish = Mulish({ weight: '800', subsets: ['latin'], preload: false });
+const fManrope = Manrope({ weight: '700', subsets: ['latin'], preload: false });
+const fSora = Sora({ weight: '700', subsets: ['latin'], preload: false });
+const fExo2 = Exo_2({ weight: '700', subsets: ['latin'], preload: false });
+const fLexend = Lexend({ weight: '700', subsets: ['latin'], preload: false });
+const fKanit = Kanit({ weight: '700', subsets: ['latin'], preload: false });
+const fPrompt = Prompt({ weight: '700', subsets: ['latin'], preload: false });
+const fJost = Jost({ weight: '600', subsets: ['latin'], preload: false });
+const fArchivoNarrow = Archivo_Narrow({ weight: '700', subsets: ['latin'], preload: false });
+const fBarlowCond = Barlow_Condensed({ weight: '700', subsets: ['latin'], preload: false });
+const fSairaCond = Saira_Condensed({ weight: '700', subsets: ['latin'], preload: false });
+const fTeko = Teko({ weight: '700', subsets: ['latin'], preload: false });
+const fKhand = Khand({ weight: '700', subsets: ['latin'], preload: false });
+const fRajdhani = Rajdhani({ weight: '700', subsets: ['latin'], preload: false });
+const fPathwayGothic = Pathway_Gothic_One({ weight: '400', subsets: ['latin'], preload: false });
+const fVarelaRound = Varela_Round({ weight: '400', subsets: ['latin'], preload: false });
+const fChewy = Chewy({ weight: '400', subsets: ['latin'], preload: false });
+const fSniglet = Sniglet({ weight: '800', subsets: ['latin'], preload: false });
+const fPaytone = Paytone_One({ weight: '400', subsets: ['latin'], preload: false });
+const fConcertOne = Concert_One({ weight: '400', subsets: ['latin'], preload: false });
+const fMerriweather = Merriweather({ weight: '700', subsets: ['latin'], preload: false });
+const fLora = Lora({ weight: '700', subsets: ['latin'], preload: false });
+const fPtSerif = PT_Serif({ weight: '700', subsets: ['latin'], preload: false });
+const fZillaSlab = Zilla_Slab({ weight: '700', subsets: ['latin'], preload: false });
+const fYeseva = Yeseva_One({ weight: '400', subsets: ['latin'], preload: false });
+const fBitter = Bitter({ weight: '700', subsets: ['latin'], preload: false });
+const fPassionOne = Passion_One({ weight: '700', subsets: ['latin'], preload: false });
+const fBowlby = Bowlby_One({ weight: '400', subsets: ['latin'], preload: false });
+const fUltra = Ultra({ weight: '400', subsets: ['latin'], preload: false });
+const fSigmar = Sigmar_One({ weight: '400', subsets: ['latin'], preload: false });
+const fRowdies = Rowdies({ weight: '700', subsets: ['latin'], preload: false });
+const fFugaz = Fugaz_One({ weight: '400', subsets: ['latin'], preload: false });
+const fMichroma = Michroma({ weight: '400', subsets: ['latin'], preload: false });
+const fSyncopate = Syncopate({ weight: '700', subsets: ['latin'], preload: false });
 
 const FONT_CLASS = {
   modern: fontModern.className, elegant: fontElegant.className, schmal: fontSchmal.className,
-  schrift: fontSchrift.className, rund: fontRund.className,
+  rund: fontRund.className,
   montserrat: fMontserrat.className, poppins: fPoppins.className, raleway: fRaleway.className, russo: fRusso.className,
   bebas: fBebas.className, anton: fAnton.className, fjalla: fFjalla.className, staatliches: fStaatliches.className,
   nunito: fNunito.className, quicksand: fQuicksand.className, comfortaa: fComfortaa.className, fredoka: fFredoka.className, lilita: fLilita.className,
   abril: fAbril.className, dmserif: fDmSerif.className, cinzel: fCinzel.className, robotoslab: fRobotoSlab.className, alfaslab: fAlfaSlab.className,
-  lobster: fLobster.className, dancing: fDancing.className, kaushan: fKaushan.className, courgette: fCourgette.className,
   bungee: fBungee.className, righteous: fRighteous.className, bangers: fBangers.className, luckiest: fLuckiest.className, titan: fTitan.className,
   orbitron: fOrbitron.className, audiowide: fAudiowide.className, blackops: fBlackOps.className, sairastencil: fSairaStencil.className,
+  rubik: fRubik.className, worksans: fWorkSans.className, barlow: fBarlow.className, mulish: fMulish.className, manrope: fManrope.className, sora: fSora.className, exo2: fExo2.className, lexend: fLexend.className, kanit: fKanit.className, prompt: fPrompt.className, jost: fJost.className,
+  archivonarrow: fArchivoNarrow.className, barlowcond: fBarlowCond.className, sairacond: fSairaCond.className, teko: fTeko.className, khand: fKhand.className, rajdhani: fRajdhani.className, pathwaygothic: fPathwayGothic.className,
+  varelaround: fVarelaRound.className, chewy: fChewy.className, sniglet: fSniglet.className, paytone: fPaytone.className, concertone: fConcertOne.className,
+  merriweather: fMerriweather.className, lora: fLora.className, ptserif: fPtSerif.className, zillaslab: fZillaSlab.className, yeseva: fYeseva.className, bitter: fBitter.className,
+  passionone: fPassionOne.className, bowlby: fBowlby.className, ultra: fUltra.className, sigmar: fSigmar.className, rowdies: fRowdies.className, fugaz: fFugaz.className,
+  michroma: fMichroma.className, syncopate: fSyncopate.className,
 };
 
 // Google-Font-Name + Gewicht fürs Angebots-Popup (lädt dieselbe Schrift per CSS-Link).
 const FONT_PDF = {
-  modern: ['Archivo Black', 400], elegant: ['Playfair Display', 700], schmal: ['Oswald', 600], schrift: ['Pacifico', 400], rund: ['Baloo 2', 700],
+  modern: ['Archivo Black', 400], elegant: ['Playfair Display', 700], schmal: ['Oswald', 600], rund: ['Baloo 2', 700],
   montserrat: ['Montserrat', 800], poppins: ['Poppins', 700], raleway: ['Raleway', 800], russo: ['Russo One', 400],
   bebas: ['Bebas Neue', 400], anton: ['Anton', 400], fjalla: ['Fjalla One', 400], staatliches: ['Staatliches', 400],
   nunito: ['Nunito', 800], quicksand: ['Quicksand', 700], comfortaa: ['Comfortaa', 700], fredoka: ['Fredoka', 600], lilita: ['Lilita One', 400],
   abril: ['Abril Fatface', 400], dmserif: ['DM Serif Display', 400], cinzel: ['Cinzel', 700], robotoslab: ['Roboto Slab', 700], alfaslab: ['Alfa Slab One', 400],
-  lobster: ['Lobster', 400], dancing: ['Dancing Script', 700], kaushan: ['Kaushan Script', 400], courgette: ['Courgette', 400],
   bungee: ['Bungee', 400], righteous: ['Righteous', 400], bangers: ['Bangers', 400], luckiest: ['Luckiest Guy', 400], titan: ['Titan One', 400],
   orbitron: ['Orbitron', 700], audiowide: ['Audiowide', 400], blackops: ['Black Ops One', 400], sairastencil: ['Saira Stencil One', 400],
+  rubik: ['Rubik', 700], worksans: ['Work Sans', 700], barlow: ['Barlow', 700], mulish: ['Mulish', 800], manrope: ['Manrope', 700], sora: ['Sora', 700], exo2: ['Exo 2', 700], lexend: ['Lexend', 700], kanit: ['Kanit', 700], prompt: ['Prompt', 700], jost: ['Jost', 600],
+  archivonarrow: ['Archivo Narrow', 700], barlowcond: ['Barlow Condensed', 700], sairacond: ['Saira Condensed', 700], teko: ['Teko', 700], khand: ['Khand', 700], rajdhani: ['Rajdhani', 700], pathwaygothic: ['Pathway Gothic One', 400],
+  varelaround: ['Varela Round', 400], chewy: ['Chewy', 400], sniglet: ['Sniglet', 800], paytone: ['Paytone One', 400], concertone: ['Concert One', 400],
+  merriweather: ['Merriweather', 700], lora: ['Lora', 700], ptserif: ['PT Serif', 700], zillaslab: ['Zilla Slab', 700], yeseva: ['Yeseva One', 400], bitter: ['Bitter', 700],
+  passionone: ['Passion One', 700], bowlby: ['Bowlby One', 400], ultra: ['Ultra', 400], sigmar: ['Sigmar One', 400], rowdies: ['Rowdies', 700], fugaz: ['Fugaz One', 400],
+  michroma: ['Michroma', 400], syncopate: ['Syncopate', 700],
 };
 
 // Schriftfamilie der hochgeladenen Kundenschrift (FontFace-API, nur im Browser registriert)
@@ -103,6 +152,10 @@ const DEFAULTS = {
   text: 'IHR SCHRIFTZUG', fontId: 'modern', customFontName: '',
   logoWidthCm: '', logoHeightCm: '', logoName: '', logoUrl: '',
   logoShape: 'rect', logoDiameterCm: '', // rect = En × Boy · circle = Ø çap (en = boy = çap)
+  logoMode: '3d', // '3d' = harflerle aynı kutu · 'uv' = düz baskı logo (m² fiyatı)
+  uvBaski: false, // UV Baskı (HARF): harf ön yüzüne baskı — YALNIZ önden akrilik ürünlerde (face = pleksi)
+  logoUv: false, // UV Baskı (LOGO): 3D logo ön yüzüne baskı
+  cubukUv: false, // UV Baskı (ÇUBUK LED): çubuk ön yüzüne baskı
   cubukLedCm: '', cubukLedHeightCm: '', // Çubuk LED (isteğe bağlı): uzunluk × yükseklik — 150 cm'lik parçalara bölünür, fiyata harfler gibi girer
   availWidth: '', availHeight: '', heightCm: 30,
   lit: '', lightDir: '', lightColor: 'warmweiss',
@@ -427,8 +480,13 @@ export default function KonfiguratorTest() {
   const { locale } = useLocale();
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
+  const cartItems = useCartStore((s) => s.items); // Özet panelindeki mini-sepet listesi için
+  const removeItem = useCartStore((s) => s.removeItem); // sonuç bölümündeki ürün kutusundan kaldırma
   const [sel, setSel] = useState(DEFAULTS);
-  const [added, setAdded] = useState(false);
+  const [partAdded, setPartAdded] = useState(false); // çok parçalı proje: "sepete eklendi" bildirimi
+  const [hydrated, setHydrated] = useState(false); // mini-sepet SSR/CSR uyumsuzluğunu önlemek için
+  const [logoOpen, setLogoOpen] = useState(false); // Logo bölümü: varsayılan gizli, tıklayınca açılır
+  const [cubukOpen, setCubukOpen] = useState(false); // Çubuk LED bölümü: varsayılan gizli, tıklayınca açılır
   const set = (patch) => setSel((s) => ({ ...s, ...patch }));
 
   // Font-Kategoriefilter + hochgeladene Kundenschrift
@@ -555,6 +613,7 @@ export default function KonfiguratorTest() {
   useEffect(() => {
     try { localStorage.setItem('kh-konfig', JSON.stringify(sel)); } catch { /* Speicher voll/gesperrt */ }
   }, [sel]);
+  useEffect(() => setHydrated(true), []);
 
   // Unbeleuchteter Edelstahl/Chrom bietet keine RAL-Lackierung: hängt eine frühere
   // RAL-Wahl im State, auf Silber zurücksetzen — sonst flösse der Lackier-Aufpreis
@@ -594,6 +653,21 @@ export default function KonfiguratorTest() {
     return undefined;
   })();
   const cfg = buildCfg(sel);
+  // Önden akrilik ürün mü? (ön yüz = pleksi) — UV Baskı yalnız bunlarda sunulur.
+  // Işıklı: Frontleuchtend / Acryl leuchtend · Işıksız: tam akril (plexi).
+  const frontAcrylic = sel.lit === 'unbeleuchtet'
+    ? sel.unbelMaterial === 'plexi'
+    : sel.lit === 'beleuchtet' && (sel.lightDir === 'front' || sel.lightDir === 'front_seite');
+  // HARF UV aktif mi? Yalnız harf UV, HARFİN kendi ön yüzünün akrilik olmasını gerektirir →
+  // aktifse harfin ışık yönü / malzeme seçenekleri UV'ye uygun (akrilik ön yüz) olanlarla sınırlanır.
+  // Logo/çubuk UV kendi ayrı kutularının ön yüzüyle ilgilidir; harfi kısıtlamaz.
+  const uvActive = sel.uvBaski;
+  // Harf önden akrilik değilse yalnız HARF UV geçersiz → kapat. Logo + çubuk UV bağımsız, dokunma.
+  useEffect(() => { if (!frontAcrylic) setSel((s) => (s.uvBaski ? { ...s, uvBaski: false } : s)); }, [frontAcrylic]);
+  // Ürün etiketi: metin varsa metin, yoksa harfsiz ürün türü (Logo / Çubuk LED / ikisi).
+  const konfLabel = (k) => (k?.text)
+    || (k?.logo && k?.cubukLed ? `${t('konfig3.rLogo')} + ${t('konfig3.cubukLedRow')}`
+      : k?.logo ? t('konfig3.rLogo') : k?.cubukLed ? t('konfig3.cubukLedRow') : '');
   // Serverseitige Validierung (identische Funktion wie /api/order) schon im Client
   // spiegeln → Warenkorb wird nur freigegeben, wenn die Bestellung auch durchgeht.
   // Häufigster Fall: lackierte Seiten/Rückwand ohne gewählte RAL-Farbe.
@@ -605,17 +679,17 @@ export default function KonfiguratorTest() {
   // bleiben auf dem Server). Fehler/Timeout → lokale Formel bleibt stehen.
   const localPrice = priceForState(sel);
   const [serverPrice, setServerPrice] = useState(null);
-  const priceKey = JSON.stringify([cfg.text, cfg.heightCm, cfg.lightMode, cfg.lightingId, cfg.constructionId, cfg.fontId, cfg.montageId, cfg.trafo, cfg.logo, cfg.unbelMaterial, cfg.chromColor, cfg.depth, cfg.bohrschablone, cfg.cubukLed]);
+  const priceKey = JSON.stringify([cfg.text, cfg.heightCm, cfg.lightMode, cfg.lightingId, cfg.constructionId, cfg.fontId, cfg.montageId, cfg.trafo, cfg.logo, cfg.logoPrint, cfg.uvBaski, cfg.logoUv, cfg.cubukUv, cfg.unbelMaterial, cfg.chromColor, cfg.depth, cfg.bohrschablone, cfg.cubukLed]);
   useEffect(() => {
     setServerPrice(null);
     if (!localPrice) return;
     const ctl = new AbortController();
     const tmr = setTimeout(async () => {
       try {
-        const [text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, unbelMaterial, chromColor, depth, bohrschablone, cubukLed] = JSON.parse(priceKey);
+        const [text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed] = JSON.parse(priceKey);
         const res = await fetch('/api/price', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, unbelMaterial, chromColor, depth, bohrschablone, cubukLed }),
+          body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed }),
           signal: ctl.signal,
         });
         if (res.ok) {
@@ -657,8 +731,16 @@ export default function KonfiguratorTest() {
   const cubukEntered = sel.cubukLedCm !== '' || sel.cubukLedHeightCm !== '';
   const cubukInvalid = sel.cubukLedCm !== '' && sel.cubukLedHeightCm !== '' && !cubukDims;
   const cubukNeedSize = cubukEntered && !cubukDims && !cubukInvalid;
+  // Kayıtlı/girili veri varsa ilgili bölümü otomatik aç (gizli kalıp veri kaybolmasın).
+  useEffect(() => { if (logoFile || sel.logoWidthCm !== '' || sel.logoHeightCm !== '' || sel.logoDiameterCm !== '') setLogoOpen(true); }, [logoFile, sel.logoWidthCm, sel.logoHeightCm, sel.logoDiameterCm]);
+  useEffect(() => { if (cubukEntered) setCubukOpen(true); }, [cubukEntered]);
   // Über quoteHeight (50 cm): Preis & Warenkorb bleiben, Online-Zahlung gesperrt — nur Angebot/PDF.
-  const oversize = sel.heightCm > KONFIG_LIMITS.quoteHeight || (logoDims !== null && logoDims.heightCm > KONFIG_LIMITS.quoteHeight) || (cubukDims !== null && cubukDims.heightCm > KONFIG_LIMITS.quoteHeight);
+  // Pro Komponente getrennt, damit ein großes Logo/Çubuk nicht fälschlich die BUCHSTABEN-
+  // Höhe rot färbt (Bug: früher machte oversize einer Komponente das Buchstabenfeld rot).
+  const letterOversize = sel.heightCm > KONFIG_LIMITS.quoteHeight;
+  const logoOversize = logoDims !== null && logoDims.heightCm > KONFIG_LIMITS.quoteHeight;
+  const cubukOversize = cubukDims !== null && cubukDims.heightCm > KONFIG_LIMITS.quoteHeight;
+  const oversize = letterOversize || logoOversize || cubukOversize;
   // Buchstabenhöhe füllt die eingegebene Flächenhöhe komplett aus (bündig, kein
   // Spielraum) → Montage-Hinweis mit Pflicht-Bestätigung vor dem Warenkorb.
   const availHNum = Number(sel.availHeight) || 0;
@@ -682,8 +764,8 @@ export default function KonfiguratorTest() {
     setSel((s) => (s.heightCm !== target ? { ...s, heightCm: target } : s));
   }, [maxHeight]);
 
-  const add = () => {
-    if (!price || needFlushConfirm || areaTooSmall || configIncomplete) return;
+  // Sepet pozisyonu nesnesini kurar (add + addAndContinue ortak kullanır).
+  const buildCartItem = () => {
     // Hochgeladene Kundenschrift als Positions-Datei anhängen (falls Storage-Upload gelang)
     const fontFile = sel.fontId === 'custom' && customFont?.url ? { fileUrl: customFont.url, fileName: customFont.name } : {};
     // Projektzeichnung nur bei angebotspflichtiger Auswahl (Teklif İste). Sie hat Vorrang
@@ -692,10 +774,64 @@ export default function KonfiguratorTest() {
     const zeichnung = quoteOnly && projektFile?.url ? { fileUrl: projektFile.url, fileName: projektFile.name } : {};
     const attach = zeichnung.fileUrl ? zeichnung : fontFile;
     const noteExtra = zeichnung.fileUrl && fontFile.fileUrl ? { note: `Kundenschrift: ${fontFile.fileName} — ${fontFile.fileUrl}` } : {};
-    addItem({ categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: t('konfig3.itemName'), detail: detail3(sel), unitPrice: price.total, konfig: cfg, oversize, quoteOnly, ...attach, ...noteExtra });
-    // Warenkorb ist eine eigene Seite (kein Drawer mehr) → direkt hin navigieren
-    setAdded(true);
-    router.push('/warenkorb');
+    // Anzeigedaten für die Ergebnis-Box je Produkt mitspeichern (Detailzeilen +
+    // Buchstaben-Preistabelle), damit im Ergebnisbereich pro hinzugefügtem Produkt
+    // eine eigene Box mit „tek tek harf fiyatları" erscheint.
+    const viewRows = summaryRows(sel, price, size, t);
+    const priceView = {
+      letterRows: price.letterRows || [], logo: price.logo || null, cubukLed: price.cubukLed || null,
+      netzteil: price.netzteil || 0, ambalaj: price.ambalaj || 0, montage: price.montage || 0,
+      bohrschablone: price.bohrschablone || 0, total: price.total,
+    };
+    return { categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: sel.text.trim() ? t('konfig3.itemName') : konfLabel(cfg), detail: detail3(sel), unitPrice: price.total, konfig: cfg, oversize, quoteOnly, viewRows, priceView, ...attach, ...noteExtra };
+  };
+  const canAdd = () => price && !needFlushConfirm && !areaTooSmall && !configIncomplete;
+
+  // ── Bölüm bazlı bağımsız kalemler (Harf / Logo / Çubuk ayrı sepet ürünü olur) ──
+  // Fiyatlar paket price nesnesinden TÜRETİLİR → sunucu addon yeniden-hesabıyla birebir:
+  //   Harf = total − logo − çubuk · Logo = price.logo.total · Çubuk = price.cubukLed.total
+  // Proje-seviyesi ücretler (trafo/ambalaj/min/montaj) yalnız Harf kaleminde; logo/çubuk
+  // addon (ek ürün) olarak yalnız kendi üretim maliyetini taşır.
+  const r2 = (n) => Math.round(n * 100) / 100;
+  const logoPart = price?.logo?.total || 0;
+  const cubukPart = price?.cubukLed?.total || 0;
+  const harfPart = price ? r2(price.total - logoPart - cubukPart) : 0;
+  const hasHarfPart = !!sel.text.trim() && !!price;
+  const hasLogoPart = !!(price?.logo);
+  const hasCubukPart = !!(price?.cubukLed);
+
+  const buildHarfItem = () => {
+    const s2 = { ...sel, logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false, cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false };
+    return { categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: t('konfig3.itemName'), detail: detail3(s2), unitPrice: harfPart, konfig: buildCfg(s2) };
+  };
+  const buildLogoItem = () => {
+    const s2 = { ...sel, text: '', cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false, bohrschablone: false };
+    const c = buildCfg(s2);
+    return { categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: konfLabel(c) || t('konfig3.rLogo'), detail: detail3(s2), unitPrice: logoPart, konfig: c, addon: true };
+  };
+  const buildCubukItem = () => {
+    const s2 = { ...sel, text: '', logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false, bohrschablone: false };
+    const c = buildCfg(s2);
+    return { categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: konfLabel(c) || t('konfig3.cubukLedRow'), detail: detail3(s2), unitPrice: cubukPart, konfig: c, addon: true };
+  };
+  const addHarf = () => { if (hasHarfPart && canAdd()) { addItem(buildHarfItem()); setPartAdded(true); } };
+  const addLogoPart = () => { if (hasLogoPart) { addItem(buildLogoItem()); setPartAdded(true); } };
+  const addCubukPart = () => { if (hasCubukPart) { addItem(buildCubukItem()); setPartAdded(true); } };
+  const addAll = () => {
+    if (!canAdd()) return;
+    if (hasHarfPart) addItem(buildHarfItem());
+    if (hasLogoPart) addItem(buildLogoItem());
+    if (hasCubukPart) addItem(buildCubukItem());
+    setPartAdded(true);
+  };
+  // Özet panelindeki CTA: tüm parçaları ekle + sepet sayfasına git ("Sepete git").
+  const addAllAndGo = () => { if (!canAdd()) return; addAll(); router.push('/warenkorb'); };
+
+  // Eski tekli (paket) ekleme — geri uyum; artık UI addAll/bölüm butonlarını kullanır.
+  const add = () => {
+    if (!canAdd()) return;
+    addItem(buildCartItem());
+    setPartAdded(true);
   };
   const reset = () => {
     setSel({ ...DEFAULTS, text: t('konfig3.defaultText') }); setLogoFile(null); setLogoErr(false); setFlushOk(false); setProjektFile(null); setProjektErr(false);
@@ -704,6 +840,16 @@ export default function KonfiguratorTest() {
   };
   const inquiryHref = `/kontakt?kategorie=werbetechnik&produkt=${encodeURIComponent('3D-Buchstaben: ' + detail3(sel).slice(0, 150))}`
     + (quoteOnly && projektFile?.url ? `&zeichnung=${encodeURIComponent(projektFile.url)}` : '');
+
+  // Özet paneli mini-sepet: sepetteki kalemler (konfigüratör yazıları) + net toplam.
+  // Etiket: konfig yazısı varsa onu, yoksa ürün adı.
+  const cartCount = cartItems.length;
+  const cartNetSum = cartItems.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+
+  // Sonuç bölümünde her ÜRÜN için kutu — ama şu an aktif kutuda görünen (forma birebir
+  // eşleşen) ürünü tekrar gösterme (tek üründe kalabalık olmasın). Aktif config = cart key.
+  const currentKey = price ? `werbetechnik|konfigurator-3d-buchstaben|${detail3(sel)}` : null;
+  const completedItems = cartItems.filter((i) => i.productSlug === 'konfigurator-3d-buchstaben' && i.key !== currentKey);
 
   const openPdf = () => {
     const rows = summaryRows(sel, price, size, t);
@@ -728,7 +874,7 @@ export default function KonfiguratorTest() {
     const [famName, famWeight] = isCustom ? [CUSTOM_FONT_FAMILY, 400] : (FONT_PDF[sel.fontId] || FONT_PDF.modern);
     let vectorHtml = '';
     const svgEl = document.querySelector('svg[data-vektormass]');
-    if (svgEl) {
+    if (price && svgEl) {
       const clone = svgEl.cloneNode(true);
       clone.querySelectorAll('text').forEach((n) => {
         if (n.getAttribute('class')) { n.removeAttribute('class'); n.style.fontFamily = `'${famName}', sans-serif`; n.style.fontWeight = famWeight; }
@@ -737,7 +883,7 @@ export default function KonfiguratorTest() {
       vectorHtml = `<h2 style="margin-top:26px">${t('konfig3.secVector')}</h2><div style="border:1px solid #eee;padding:14px 10px">${clone.outerHTML}</div>`;
     }
     // Kundenlogo (falls Bildvorschau vorhanden) mit Wunschmaß ins Angebot
-    const logoHtml = logoFile?.dataUrl && logoDims
+    const logoHtml = price && logoFile?.dataUrl && logoDims
       ? `<h2 style="margin-top:26px">${t('konfig3.rLogo')}</h2><div style="border:1px solid #eee;padding:14px 10px;text-align:center"><img src="${logoFile.dataUrl}" alt="Logo" style="max-width:60%;max-height:140px${logoCircle ? ';border-radius:50%' : ''}"><p class="mut" style="margin:6px 0 0">${logoCircle ? `Ø ${logoDims.heightCm}` : `${logoDims.widthCm} × ${logoDims.heightCm}`} cm</p></div>`
       : '';
     const fontHeadHtml = isCustom
@@ -752,10 +898,34 @@ export default function KonfiguratorTest() {
       const d = LIGHT_DIRS.find((x) => x.id === sel.lightDir);
       return d && { src: `/configurator/light/${d.img}.jpg`, label: oL('lightDir', d) };
     })();
-    const productHtml = prodPick
+    const productHtml = price && prodPick
       ? `<h2 style="margin-top:28px">${t('konfig3.pdfProductPhoto')}</h2>
          <div><img src="${window.location.origin}${prodPick.src}" alt="${prodPick.label}" style="width:60%;max-width:380px;display:block;border:1px solid #eee"><p class="mut" style="margin:6px 0 0">${prodPick.label}</p></div>`
       : '';
+
+    // ── Çok ürünlü teklif: sepetteki her konfigüratör ürünü + (geçerliyse) şu an
+    // yapılandırılan ürün ayrı blok olarak. Her blok: detay tablosu + harf-fiyat
+    // tablosu + ara toplam. En sonda proje toplamı.
+    // Tamamlanan ürünler (aktif configle eşleşen hariç) + geçerliyse mevcut config — tekrarsız.
+    const products = completedItems.map((it, idx) => ({
+      label: `${t('konfig3.productBoxLabel')} ${idx + 1}: „${konfLabel(it.konfig) || it.name || ''}"`, rows: it.viewRows || [], price: it.priceView, qty: it.qty || 1,
+    }));
+    if (price) products.push({ label: `${t('konfig3.productBoxLabel')} ${products.length + 1}: „${sel.text}"`, rows, price, qty: 1 });
+    const letterTableHtml = (pr) => (pr?.letterRows?.length ? `<table>
+      <tr><td style="width:42%"><strong>${t('konfig3.phLetter')}</strong></td><td><strong>${t('konfig3.phHeight')}</strong></td><td style="text-align:right"><strong>${t('konfig3.phPrice')}</strong></td></tr>
+      ${pr.letterRows.map((r) => `<tr><td><strong>${esc(r.ch)}</strong></td><td>${r.heightCm} cm</td><td style="text-align:right">${fmtEur(r.price)}</td></tr>`).join('')}
+      ${pr.logo ? `<tr><td>${t('konfig3.rLogo')}</td><td>${pr.logo.widthCm}×${pr.logo.heightCm} cm</td><td style="text-align:right">${fmtEur(pr.logo.total)}</td></tr>` : ''}
+      ${pr.cubukLed ? `<tr><td>${t('konfig3.cubukLedRow')}</td><td>${pr.cubukLed.lengthCm}×${pr.cubukLed.heightCm} cm</td><td style="text-align:right">${fmtEur(pr.cubukLed.total)}</td></tr>` : ''}
+      ${pr.netzteil > 0 ? `<tr><td colspan="2">${t('konfig3.rowTrafo')}</td><td style="text-align:right">${fmtEur(pr.netzteil)}</td></tr>` : ''}
+      ${pr.ambalaj > 0 ? `<tr><td colspan="2">${t('konfig3.rowVerpackung')}</td><td style="text-align:right">${fmtEur(pr.ambalaj)}</td></tr>` : ''}
+      ${pr.montage > 0 ? `<tr><td colspan="2">${t('konfig3.rMontage')}</td><td style="text-align:right">${fmtEur(pr.montage)}</td></tr>` : ''}
+      ${pr.bohrschablone > 0 ? `<tr><td colspan="2">${t('konfig3.bohrschablone')}</td><td style="text-align:right">${fmtEur(pr.bohrschablone)}</td></tr>` : ''}
+      </table>` : '');
+    const productsHtml = products.map((p) => `<h2 style="margin-top:24px">${esc(p.label)}${p.qty > 1 ? ` ×${p.qty}` : ''}</h2>
+      <table>${(p.rows || []).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v || '—')}</td></tr>`).join('')}</table>
+      ${letterTableHtml(p.price)}
+      <table><tr><td style="font-weight:700">${t('konfig3.totalNet')}</td><td style="text-align:right;font-weight:700">${fmtEur((p.price?.total || 0) * p.qty)}</td></tr></table>`).join('');
+    const projectTotal = products.reduce((s, p) => s + (p.price?.total || 0) * p.qty, 0);
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${t('konfig3.pdfTitle')}</title>
       ${fontHeadHtml}
@@ -768,20 +938,8 @@ export default function KonfiguratorTest() {
       ${buyerHtml}
       ${vectorHtml}
       ${logoHtml}
-      <table>
-      ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v || '—'}</td></tr>`).join('')}
-      </table>
-      ${price?.letterRows?.length ? `<h2 style="margin-top:22px">${t('konfig3.phPrice')}</h2><table>
-      <tr><td style="width:42%"><strong>${t('konfig3.phLetter')}</strong></td><td><strong>${t('konfig3.phHeight')}</strong></td><td style="text-align:right"><strong>${t('konfig3.phPrice')}</strong></td></tr>
-      ${price.letterRows.map((r) => `<tr><td><strong>${r.ch}</strong></td><td>${r.heightCm} cm</td><td style="text-align:right">${fmtEur(r.price)}</td></tr>`).join('')}
-      ${price.logo ? `<tr><td>${t('konfig3.rLogo')}</td><td>${price.logo.widthCm}×${price.logo.heightCm} cm</td><td style="text-align:right">${fmtEur(price.logo.total)}</td></tr>` : ''}
-      ${price.cubukLed ? `<tr><td>${t('konfig3.cubukLedRow')}</td><td>${price.cubukLed.lengthCm}×${price.cubukLed.heightCm} cm</td><td style="text-align:right">${fmtEur(price.cubukLed.total)}</td></tr>` : ''}
-      ${price.netzteil > 0 ? `<tr><td colspan="2">${t('konfig3.rowTrafo')}</td><td style="text-align:right">${fmtEur(price.netzteil)}</td></tr>` : ''}
-      ${price.ambalaj > 0 ? `<tr><td colspan="2">${t('konfig3.rowVerpackung')}</td><td style="text-align:right">${fmtEur(price.ambalaj)}</td></tr>` : ''}
-      ${price.montage > 0 ? `<tr><td colspan="2">${t('konfig3.rMontage')}</td><td style="text-align:right">${fmtEur(price.montage)}</td></tr>` : ''}
-      ${price.bohrschablone > 0 ? `<tr><td colspan="2">${t('konfig3.bohrschablone')}</td><td style="text-align:right">${fmtEur(price.bohrschablone)}</td></tr>` : ''}
-      </table>` : ''}
-      ${price ? `<table><tr><td class="total">${t('konfig3.totalNet')}</td><td class="total" style="text-align:right">${fmtEur(price.total)}</td></tr></table>` : ''}
+      ${productsHtml}
+      <table><tr><td class="total">${products.length > 1 ? t('konfig3.projectTotal') : t('konfig3.totalNet')}</td><td class="total" style="text-align:right">${fmtEur(projectTotal)}</td></tr></table>
       ${productHtml}
       <p class="mut">${t('konfig3.pdfFootnote')}</p>
       <script>window.onload=()=>{(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>window.print(),150))}</script></body></html>`;
@@ -802,8 +960,13 @@ export default function KonfiguratorTest() {
         <section className="flex flex-col gap-4">
           <Head n={1} icon={Type}>{t('konfig3.secText')}</Head>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">{t('konfig3.textLabel', { n: KONFIG_LIMITS.maxTextLen })}
-            <input type="text" maxLength={KONFIG_LIMITS.maxTextLen} value={sel.text} onChange={(e) => set({ text: e.target.value })} className={inputCls + ' text-lg font-bold'} />
+            <input type="text" maxLength={KONFIG_LIMITS.maxTextLen} value={sel.text} onChange={(e) => set({ text: e.target.value })} placeholder={t('konfig3.textPlaceholder')} className={inputCls + ' text-lg font-bold'} />
           </label>
+          {/* Çok parçalı proje ipucu (farklı font/yükseklik → her parça ayrı, tek proje) */}
+          <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-accent/5 text-charcoal border border-accent/30">
+            <Info size={15} className="flex-shrink-0 mt-0.5 text-accent" />
+            <span>{t('konfig3.multiPartHint')}</span>
+          </div>
           <Field label={t('konfig3.fontLabel')}>
             {/* Kategorie-Chips */}
             <div className="flex flex-wrap gap-1.5">
@@ -929,10 +1092,10 @@ export default function KonfiguratorTest() {
             )}
             <span className="text-[12px] text-textmut">{t('konfig.areaNote', { font: t(`konfig.font_${sel.fontId}`, {}, sel.fontId), max: KONFIG_LIMITS.maxHeight })}</span>
           </div>
-          <Field label={<>{t('konfig3.letterHeight')}: <strong className={oversize || areaTooSmall ? 'text-warnred' : 'text-accent'}>{sel.heightCm} cm</strong></>}>
+          <Field label={<>{t('konfig3.letterHeight')}: <strong className={letterOversize || areaTooSmall ? 'text-warnred' : 'text-accent'}>{sel.heightCm} cm</strong></>}>
             {/* Harte Obergrenze: bei eingegebener Fläche kann der Regler das Flächen-Maximum
                 (Breite UND Höhe) nie überschreiten — nicht nur warnen. */}
-            <input type="range" min={KONFIG_LIMITS.minHeight} max={sliderMax} step={5} value={sel.heightCm} onChange={(e) => set({ heightCm: Math.min(Number(e.target.value), sliderMax) })} className={`w-full ${oversize || areaTooSmall ? 'accent-warnred' : 'accent-accent'}`} />
+            <input type="range" min={KONFIG_LIMITS.minHeight} max={sliderMax} step={5} value={sel.heightCm} onChange={(e) => set({ heightCm: Math.min(Number(e.target.value), sliderMax) })} className={`w-full ${letterOversize || areaTooSmall ? 'accent-warnred' : 'accent-accent'}`} />
             <span className="flex justify-between text-[11px] text-textmut"><span>{KONFIG_LIMITS.minHeight} cm</span><span>{sliderMax} cm</span></span>
             {/* Direkteingabe (cm): freie Zwischenwerte (der Regler springt in 5er-Schritten).
                 Beim Tippen nur nach oben klemmen, Untergrenze erst beim Verlassen des Felds. */}
@@ -944,7 +1107,7 @@ export default function KonfiguratorTest() {
               <span className="text-[13px] text-textsec">cm</span>
             </div>
           </Field>
-          {oversize && (
+          {letterOversize && (
             <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdeceb] text-warnred border border-warnred/40">
               <Info size={15} className="flex-shrink-0 mt-0.5" />
               <span>{t('konfig3.oversizeWarn', { max: KONFIG_LIMITS.quoteHeight })}</span>
@@ -975,99 +1138,9 @@ export default function KonfiguratorTest() {
           )}
         </section>
 
-        {/* 3. Logo (optional) — Datei + Wunschmaß, fließt in den Preis ein */}
-        <section className="flex flex-col gap-4">
-          <Head n={3} icon={ImageIcon}>{t('konfig3.secLogo')}</Head>
-          <div className={`${box} px-4 py-4 flex flex-col gap-3`}>
-            <p className="m-0 text-[13px] text-textsec">{t('konfig3.logoIntro')}</p>
-            <label className={`flex items-center justify-center gap-2 px-3 py-3 text-[13px] font-bold border-2 border-dashed cursor-pointer ${logoFile ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
-              <Upload size={15} className="text-accent flex-shrink-0" />
-              {logoBusy ? t('konfig3.logoBusy') : logoFile ? `✓ ${logoFile.name}` : t('konfig3.logoBtn')}
-              <input type="file" accept=".svg,.pdf,.ai,.eps,.png,.jpg,.jpeg" className="hidden"
-                onChange={(e) => { onLogoFile(e.target.files && e.target.files[0]); e.target.value = ''; }} />
-            </label>
-            {logoErr && <span className="text-[12px] text-warnred font-semibold">{t('konfig3.logoErr')}</span>}
-            {logoFile && (
-              <div className="flex items-center gap-3">
-                {logoFile.dataUrl && <img src={logoFile.dataUrl} alt={logoFile.name} className="w-20 h-20 object-contain border border-linegray bg-sectionlight p-1 flex-shrink-0" />}
-                <button onClick={removeLogo} className="text-[12px] font-semibold text-warnred underline cursor-pointer bg-transparent border-0">{t('konfig3.logoRemove')}</button>
-              </div>
-            )}
-            {logoFile && !logoFile.url && <span className="text-[12px] text-textmut">{t('konfig3.logoMailHint')}</span>}
-            {/* Maß-Art: Rechteck (B × H) oder Rund (Ø) — Preis & Vorschau folgen dem gewählten Maß */}
-            <div className="flex flex-wrap gap-2">
-              {[['rect', 'logoShapeRect'], ['circle', 'logoShapeCircle']].map(([id, key]) => (
-                <button key={id} onClick={() => set({ logoShape: id })}
-                  className={`px-3 py-2 text-[13px] font-bold border-2 cursor-pointer ${sel.logoShape === id ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-textsec hover:border-accent'}`}>
-                  {t(`konfig3.${key}`)}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-end gap-3">
-              {logoCircle ? (
-                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoDia')}
-                  <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxHeight} inputMode="numeric" placeholder={t('konfig3.logoDiaPh')} value={sel.logoDiameterCm} onChange={(e) => set({ logoDiameterCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-              ) : (
-                <>
-                  <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoW')}
-                    <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxWidth} inputMode="numeric" placeholder={t('konfig3.logoWPh')} value={sel.logoWidthCm} onChange={(e) => set({ logoWidthCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-                  <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoH')}
-                    <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxHeight} inputMode="numeric" placeholder={t('konfig3.logoHPh')} value={sel.logoHeightCm} onChange={(e) => set({ logoHeightCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-                </>
-              )}
-            </div>
-            {logoInvalid && (
-              <span className="text-[13px] text-warnred">{logoCircle
-                ? t('konfig3.logoInvalidDia', { min: LOGO_LIMITS.minCm, maxH: LOGO_LIMITS.maxHeight })
-                : t('konfig3.logoInvalid', { min: LOGO_LIMITS.minCm, maxW: LOGO_LIMITS.maxWidth, maxH: LOGO_LIMITS.maxHeight })}</span>
-            )}
-            {logoNeedSize && (
-              <span className="text-[13px] text-textsec flex items-center gap-1.5"><Info size={14} className="text-accent flex-shrink-0" /> {t('konfig3.logoNeedSize')}</span>
-            )}
-            {logoDims && price?.logo && (
-              <span className="text-[13px] font-semibold text-charcoal">{t('konfig3.logoPriceNote', { price: fmtEur(price.logo.total), n: price.logo.eqLetters, h: logoDims.heightCm })}</span>
-            )}
-            {logoDims && !price && (
-              <span className="text-[13px] text-textsec">{t('konfig3.logoEqNote', { n: logoEquivalentLetters(logoDims.widthCm, logoDims.heightCm) })}</span>
-            )}
-          </div>
-          {/* Çubuk LED — logonun hemen altında: toplam ölçü → 150 cm'lik parçalara otomatik bölme */}
-          <div className={`${box} px-4 py-4 flex flex-col gap-3`}>
-            <span className="text-[14px] font-extrabold text-charcoal">{t('konfig3.cubukLedTitle')}</span>
-            <div className="flex flex-wrap items-end gap-4">
-              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.cubukLedLen')}
-                <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.cubukLedLenPh')} value={sel.cubukLedCm}
-                  onChange={(e) => set({ cubukLedCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.cubukLedH')}
-                <input type="number" min={CUBUK_LED_LIMITS.minCm} inputMode="numeric" placeholder={t('konfig3.cubukLedHPh')} value={sel.cubukLedHeightCm}
-                  onChange={(e) => set({ cubukLedHeightCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-              {ledCount > 0 && (
-                <div className="flex flex-col gap-0.5 text-[13px] text-charcoal">
-                  <span>{t('konfig3.cubukLedTotal')}: <strong>{ledTotal} cm</strong></span>
-                  <span>{t('konfig3.cubukLedCount')}: <strong>{ledCount}</strong></span>
-                  <span>{t('konfig3.cubukLedPieces')}: <strong>{ledPieces.map((p) => `${p} cm`).join(' + ')}</strong></span>
-                  {cubukDims && price?.cubukLed && (
-                    <span>{t('konfig3.phPrice')}: <strong className="text-accent">+{fmtEur(price.cubukLed.total)}</strong></span>
-                  )}
-                </div>
-              )}
-            </div>
-            <span className="text-[12px] text-textsec flex items-start gap-1.5"><Info size={14} className="text-accent flex-shrink-0 mt-0.5" /> {t('konfig3.cubukLedMaxNote')}</span>
-            {ledCount > 0 && ledTotal % LED_MAX !== 0 && (
-              <span className="text-[12px] text-textmut">{t('konfig3.cubukLedRemainNote')}</span>
-            )}
-            {cubukInvalid && (
-              <span className="text-[13px] text-warnred">{t('konfig3.cubukLedInvalid', { min: CUBUK_LED_LIMITS.minCm, maxLen: CUBUK_LED_LIMITS.maxLen, maxH: CUBUK_LED_LIMITS.maxHeight })}</span>
-            )}
-            {cubukNeedSize && (
-              <span className="text-[13px] text-textsec flex items-center gap-1.5"><Info size={14} className="text-accent flex-shrink-0" /> {t('konfig3.cubukLedNeedSize')}</span>
-            )}
-          </div>
-        </section>
-
-        {/* 4. Vektormaß */}
+        {/* 3. Vektormaß */}
         <section className="flex flex-col gap-3">
-          <Head n={4} icon={Ruler}>{t('konfig3.secVector')}</Head>
+          <Head n={3} icon={Ruler}>{t('konfig3.secVector')}</Head>
           <div className={`${box} px-4 py-5`}>
             {size ? <VectorMass text={sel.text.trim()} fontClass={FONT_CLASS[sel.fontId] || ''} fontFamily={sel.fontId === 'custom' ? `'${CUSTOM_FONT_FAMILY}', sans-serif` : undefined} widthCm={size.widthCm} heightCm={sel.heightCm} availWidth={sel.availWidth} availHeight={sel.availHeight} frameLabel={t('konfig3.availFrame')} color={letterColor}
               logo={logoDims ? { ...logoDims, shape: sel.logoShape, href: logoFile?.dataUrl || null, label: t('konfig3.rLogo') } : null}
@@ -1094,9 +1167,9 @@ export default function KonfiguratorTest() {
           </div>
         </section>
 
-        {/* 5. Tabellentyp */}
+        {/* 4. Tabellentyp */}
         <section className="flex flex-col gap-3">
-          <Head n={5} icon={Lightbulb}>{t('konfig3.secType')}</Head>
+          <Head n={4} icon={Lightbulb}>{t('konfig3.secType')}</Head>
           <div className="grid grid-cols-2 gap-3">
             {TABELLE_TYPES.map((ty) => (
               <ImgChoice key={ty.id} folder="light" img={ty.img} title={oL('type', ty)} sub={oS('type', ty)} alt={ty.alt} active={sel.lit === ty.id} onClick={() => set({ lit: ty.id })} />
@@ -1107,9 +1180,9 @@ export default function KonfiguratorTest() {
         {/* 5A. Beleuchtet → Lichtrichtung + Optionen */}
         {lit && (
           <section className="flex flex-col gap-5">
-            <Head n="5A" icon={Sun}>{t('konfig3.secLightDir')}</Head>
+            <Head n="4A" icon={Sun}>{t('konfig3.secLightDir')}</Head>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {LIGHT_DIRS.map((d) => (
+              {LIGHT_DIRS.filter((d) => !uvActive || d.id === 'front' || d.id === 'front_seite').map((d) => (
                 <ImgChoice key={d.id} folder="light" img={d.img} title={oL('lightDir', d)} sub={oS('lightDir', d)} alt={d.alt} active={sel.lightDir === d.id} onClick={() => set({ lightDir: d.id })} />
               ))}
             </div>
@@ -1187,9 +1260,9 @@ export default function KonfiguratorTest() {
         {/* 5B. Unbeleuchtet → Material */}
         {sel.lit === 'unbeleuchtet' && (
           <section className="flex flex-col gap-5">
-            <Head n="5B" icon={Square}>{t('konfig3.secMaterial')}</Head>
+            <Head n="4B" icon={Square}>{t('konfig3.secMaterial')}</Head>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {UNBEL_MAT.map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oL('unbelMat', m)} sub={oD('unbelMat', m)} alt={m.alt} active={sel.unbelMaterial === m.id} onClick={() => set({ unbelMaterial: m.id })} />)}
+              {UNBEL_MAT.filter((m) => !uvActive || m.id === 'plexi').map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oL('unbelMat', m)} sub={oD('unbelMat', m)} alt={m.alt} active={sel.unbelMaterial === m.id} onClick={() => set({ unbelMaterial: m.id })} />)}
             </div>
             {sel.unbelMaterial === 'alu_lackiert' && (
               <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
@@ -1216,6 +1289,154 @@ export default function KonfiguratorTest() {
             )}
           </section>
         )}
+
+        {/* 5C. UV Baskı (HARF) — ışık/malzeme seçiminden SONRA: frontAcrylic burada kesinleşir,
+            yalnız harfin ön yüzü akrilikse gösterilir. Logo/çubuk UV'si kendi kutularında
+            (harf malzemesinden bağımsız). */}
+        {frontAcrylic && sel.text.trim() && (
+          <section className="flex flex-col gap-3">
+            <Head n="4C" icon={Sparkles}>{t('konfig3.uvBaskiLabel')}</Head>
+            <p className="m-0 text-[13px] text-textmut">{t('konfig3.uvBaskiHint')}</p>
+            <div className="flex flex-col gap-2">
+              <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.uvBaski ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
+                <input type="checkbox" checked={sel.uvBaski === true} onChange={(e) => set({ uvBaski: e.target.checked })} className="w-4 h-4 accent-accent" />
+                <span className="font-semibold text-charcoal">{t('konfig3.uvHarf')}</span>
+              </label>
+            </div>
+          </section>
+        )}
+
+        {/* 5. Logo (optional) — Datei + Wunschmaß, fließt in den Preis ein */}
+        <section className="flex flex-col gap-4">
+          <Head n={5} icon={ImageIcon}>{t('konfig3.secLogo')}</Head>
+          {/* Logo türü seçici (3D/UV) KALDIRILDI (Murat) — logo hep 3D kutu. UV Baskı,
+              harf gibi ayrı bir kutucuk olarak logo detaylarının İÇİNDE (kutuda gizli). */}
+          {!logoOpen && (
+            <button onClick={() => setLogoOpen(true)} className="flex items-center justify-center gap-2 px-4 py-3.5 text-[15px] font-semibold border-2 border-dashed border-inputline text-charcoal hover:border-accent cursor-pointer bg-white">
+              <ImageIcon size={16} className="text-accent" /> {t('konfig3.logoAdd')}
+            </button>
+          )}
+          {logoOpen && (
+          <div className={`${box} px-4 py-4 flex flex-col gap-3`}>
+            <p className="m-0 text-[13px] text-textsec">{t('konfig3.logoIntro')}</p>
+            <label className={`flex items-center justify-center gap-2 px-3 py-3 text-[13px] font-bold border-2 border-dashed cursor-pointer ${logoFile ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
+              <Upload size={15} className="text-accent flex-shrink-0" />
+              {logoBusy ? t('konfig3.logoBusy') : logoFile ? `✓ ${logoFile.name}` : t('konfig3.logoBtn')}
+              <input type="file" accept=".svg,.pdf,.ai,.eps,.png,.jpg,.jpeg" className="hidden"
+                onChange={(e) => { onLogoFile(e.target.files && e.target.files[0]); e.target.value = ''; }} />
+            </label>
+            {logoErr && <span className="text-[12px] text-warnred font-semibold">{t('konfig3.logoErr')}</span>}
+            {logoFile && (
+              <div className="flex items-center gap-3">
+                {logoFile.dataUrl && <img src={logoFile.dataUrl} alt={logoFile.name} className="w-20 h-20 object-contain border border-linegray bg-sectionlight p-1 flex-shrink-0" />}
+                <button onClick={removeLogo} className="text-[12px] font-semibold text-warnred underline cursor-pointer bg-transparent border-0">{t('konfig3.logoRemove')}</button>
+              </div>
+            )}
+            {logoFile && !logoFile.url && <span className="text-[12px] text-textmut">{t('konfig3.logoMailHint')}</span>}
+            {/* Maß-Art: Rechteck (B × H) oder Rund (Ø) — Preis & Vorschau folgen dem gewählten Maß */}
+            <div className="flex flex-wrap gap-2">
+              {[['rect', 'logoShapeRect'], ['circle', 'logoShapeCircle']].map(([id, key]) => (
+                <button key={id} onClick={() => set({ logoShape: id })}
+                  className={`px-3 py-2 text-[13px] font-bold border-2 cursor-pointer ${sel.logoShape === id ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-textsec hover:border-accent'}`}>
+                  {t(`konfig3.${key}`)}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              {logoCircle ? (
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoDia')}
+                  <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxHeight} inputMode="numeric" placeholder={t('konfig3.logoDiaPh')} value={sel.logoDiameterCm} onChange={(e) => set({ logoDiameterCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+              ) : (
+                <>
+                  <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoW')}
+                    <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxWidth} inputMode="numeric" placeholder={t('konfig3.logoWPh')} value={sel.logoWidthCm} onChange={(e) => set({ logoWidthCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+                  <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.logoH')}
+                    <input type="number" min={LOGO_LIMITS.minCm} max={LOGO_LIMITS.maxHeight} inputMode="numeric" placeholder={t('konfig3.logoHPh')} value={sel.logoHeightCm} onChange={(e) => set({ logoHeightCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+                </>
+              )}
+            </div>
+            {logoInvalid && (
+              <span className="text-[13px] text-warnred">{logoCircle
+                ? t('konfig3.logoInvalidDia', { min: LOGO_LIMITS.minCm, maxH: LOGO_LIMITS.maxHeight })
+                : t('konfig3.logoInvalid', { min: LOGO_LIMITS.minCm, maxW: LOGO_LIMITS.maxWidth, maxH: LOGO_LIMITS.maxHeight })}</span>
+            )}
+            {logoNeedSize && (
+              <span className="text-[13px] text-textsec flex items-center gap-1.5"><Info size={14} className="text-accent flex-shrink-0" /> {t('konfig3.logoNeedSize')}</span>
+            )}
+            {logoDims && price?.logo && (
+              <span className="text-[13px] font-semibold text-charcoal">{t('konfig3.logoPriceNote', { price: fmtEur(price.logo.total), h: logoDims.heightCm })}</span>
+            )}
+            {logoDims && !price && (
+              <span className="text-[13px] text-textsec">{t('konfig3.logoEqNote')}</span>
+            )}
+            {/* Logo UV baskı — harf malzemesinden BAĞIMSIZ (logo kendi akrilik ön yüzüne baskı);
+                logo bölümü açıksa her zaman görünür. */}
+            <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.logoUv ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
+              <input type="checkbox" checked={sel.logoUv === true} onChange={(e) => set({ logoUv: e.target.checked })} className="w-4 h-4 accent-accent" />
+              <span className="font-semibold text-charcoal">{t('konfig3.uvLogo')}</span>
+            </label>
+            {/* Logoyu ayrı ürün olarak sepete ekle — bölümün kendi butonu (Murat). */}
+            {hasLogoPart && (
+              <button onClick={addLogoPart} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3 border-2 border-accent text-accent hover:bg-accent hover:text-white cursor-pointer">
+                <ShoppingBag size={16} /> {t('konfig3.addLogoBtn')}
+              </button>
+            )}
+            <button onClick={() => { setLogoOpen(false); removeLogo(); set({ logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false }); }} className="self-start text-[12px] font-semibold text-textmut hover:text-warnred underline cursor-pointer bg-transparent border-0">{t('konfig3.logoClose')}</button>
+          </div>
+          )}
+          {/* Çubuk LED — logonun altında, ayrı açılır bölüm (madde 2): toplam ölçü → 150 cm parçalar */}
+          {!cubukOpen && (
+            <button onClick={() => setCubukOpen(true)} className="flex items-center justify-center gap-2 px-4 py-3.5 text-[15px] font-semibold border-2 border-dashed border-inputline text-charcoal hover:border-accent cursor-pointer bg-white">
+              <Lightbulb size={16} className="text-accent" /> {t('konfig3.cubukAdd')}
+            </button>
+          )}
+          {cubukOpen && (
+          <div className={`${box} px-4 py-4 flex flex-col gap-3`}>
+            <span className="text-[14px] font-extrabold text-charcoal">{t('konfig3.cubukLedTitle')}</span>
+            <div className="flex flex-wrap items-end gap-4">
+              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.cubukLedLen')}
+                <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.cubukLedLenPh')} value={sel.cubukLedCm}
+                  onChange={(e) => set({ cubukLedCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig3.cubukLedH')}
+                <input type="number" min={CUBUK_LED_LIMITS.minHeight} inputMode="numeric" placeholder={t('konfig3.cubukLedHPh')} value={sel.cubukLedHeightCm}
+                  onChange={(e) => set({ cubukLedHeightCm: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+              {ledCount > 0 && (
+                <div className="flex flex-col gap-0.5 text-[13px] text-charcoal">
+                  <span>{t('konfig3.cubukLedTotal')}: <strong>{ledTotal} cm</strong></span>
+                  <span>{t('konfig3.cubukLedCount')}: <strong>{ledCount}</strong></span>
+                  <span>{t('konfig3.cubukLedPieces')}: <strong>{ledPieces.map((p) => `${p} cm`).join(' + ')}</strong></span>
+                  {cubukDims && price?.cubukLed && (
+                    <span>{t('konfig3.phPrice')}: <strong className="text-accent">+{fmtEur(price.cubukLed.total)}</strong></span>
+                  )}
+                </div>
+              )}
+            </div>
+            <span className="text-[12px] text-textsec flex items-start gap-1.5"><Info size={14} className="text-accent flex-shrink-0 mt-0.5" /> {t('konfig3.cubukLedMaxNote')}</span>
+            {ledCount > 0 && ledTotal % LED_MAX !== 0 && (
+              <span className="text-[12px] text-textmut">{t('konfig3.cubukLedRemainNote')}</span>
+            )}
+            {cubukInvalid && (
+              <span className="text-[13px] text-warnred">{t('konfig3.cubukLedInvalid', { min: CUBUK_LED_LIMITS.minCm, maxLen: CUBUK_LED_LIMITS.maxLen, maxH: CUBUK_LED_LIMITS.maxHeight })}</span>
+            )}
+            {cubukNeedSize && (
+              <span className="text-[13px] text-textsec flex items-center gap-1.5"><Info size={14} className="text-accent flex-shrink-0" /> {t('konfig3.cubukLedNeedSize')}</span>
+            )}
+            {/* Çubuk UV baskı — harf malzemesinden BAĞIMSIZ (çubuk kendi akrilik ön yüzüne baskı);
+                çubuk bölümü açıksa her zaman görünür. */}
+            <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.cubukUv ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
+              <input type="checkbox" checked={sel.cubukUv === true} onChange={(e) => set({ cubukUv: e.target.checked })} className="w-4 h-4 accent-accent" />
+              <span className="font-semibold text-charcoal">{t('konfig3.uvCubuk')}</span>
+            </label>
+            {/* Çubuk LED'i ayrı ürün olarak sepete ekle — bölümün kendi butonu (Murat). */}
+            {hasCubukPart && (
+              <button onClick={addCubukPart} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3 border-2 border-accent text-accent hover:bg-accent hover:text-white cursor-pointer">
+                <ShoppingBag size={16} /> {t('konfig3.addCubukBtn')}
+              </button>
+            )}
+            <button onClick={() => { setCubukOpen(false); set({ cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false }); }} className="self-start text-[12px] font-semibold text-textmut hover:text-warnred underline cursor-pointer bg-transparent border-0">{t('konfig3.cubukClose')}</button>
+          </div>
+          )}
+        </section>
 
         {/* Montage */}
         {sel.lit && (
@@ -1279,6 +1500,27 @@ export default function KonfiguratorTest() {
         {/* 7. Ergebnis */}
         <section className="flex flex-col gap-3">
           <Head n={7} icon={Check}>{t('konfig3.secResult')}</Head>
+
+          {/* Je hinzugefügtem Produkt eine eigene Box: Detailzeilen + Buchstaben-Preistabelle
+              + Summe. Nur BEREITS abgeschlossene Produkte (nicht das aktive) — siehe completedItems. */}
+          {hydrated && completedItems.map((it, idx) => (
+            <div key={it.key} className={`${box} p-5 flex flex-col gap-2`}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[15px] font-extrabold text-charcoal">{t('konfig3.productBoxLabel')} {idx + 1}: „{konfLabel(it.konfig) || it.name}"{it.qty > 1 ? ` ×${it.qty}` : ''}</span>
+                <button onClick={() => removeItem(it.key)} className="text-[12px] font-semibold text-warnred underline cursor-pointer bg-transparent border-0 flex-shrink-0">{t('konfig3.removeProduct')}</button>
+              </div>
+              {it.viewRows?.length > 0 && (
+                <dl className="flex flex-col gap-1.5 text-[13px] m-0">
+                  {it.viewRows.map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-3"><dt className="text-textmut flex-shrink-0">{k}</dt><dd className="m-0 font-semibold text-right text-charcoal">{v || '—'}</dd></div>
+                  ))}
+                </dl>
+              )}
+              {it.priceView?.letterRows?.length > 0 && <LetterPriceTable price={it.priceView} t={t} />}
+              <div className="flex justify-between items-baseline font-extrabold text-lg pt-2 mt-1 border-t border-charcoal"><span>{t('konfig3.totalNet')}</span><span>{fmtEur((it.priceView?.total ?? it.unitPrice) * (it.qty || 1))}</span></div>
+            </div>
+          ))}
+
           <div className={`${box} p-5 flex flex-col gap-2`}>
             <dl className="flex flex-col gap-1.5 text-[13px] m-0">
               {rows.map(([k, v]) => (
@@ -1301,11 +1543,21 @@ export default function KonfiguratorTest() {
             {needsProjekt && (
               <p className="m-0 text-[13px] font-semibold text-[#9a6414]">{t('konfig3.traegerPriceNote')}</p>
             )}
+            {partAdded && (
+              <p className="m-0 text-[13px] font-semibold text-charcoal bg-accent/10 border border-accent/40 px-4 py-2.5">{t('konfig3.partAdded')}</p>
+            )}
+            {/* Aksiyon butonları — sabit 2×2 ızgara:
+                [Harfleri sepete ekle | Teklif gönder] / [Yeniden yapılandır | PDF teklif oluştur].
+                Logo/Çubuk kendi bölümlerinde "sepete ekle" butonuna sahip; "Hepsini" = Özet'teki "Sepete git". */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
-              <button onClick={add} disabled={!price || needFlushConfirm || areaTooSmall || configIncomplete} className={`flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 text-white cursor-pointer disabled:opacity-40 disabled:shadow-none ${added ? 'bg-charcoal' : 'kh-glow-btn bg-accent hover:brightness-90'}`}>{added ? <Check size={17} /> : <ShoppingBag size={17} />}{added ? t('konfig3.added') : t('konfig3.addToCart')}</button>
+              {hasHarfPart && (
+                <button onClick={addHarf} disabled={!price || needFlushConfirm || areaTooSmall || configIncomplete} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-white cursor-pointer disabled:opacity-40">
+                  <ShoppingBag size={16} /> {t('konfig3.addHarf')}
+                </button>
+              )}
               <Link href={inquiryHref} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-white"><MessageSquare size={16} /> {t('konfig3.inquiry')}</Link>
-              <button onClick={() => setBuyerOpen(true)} disabled={!price} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-charcoal text-charcoal hover:bg-charcoal hover:text-white cursor-pointer disabled:opacity-40"><FileText size={16} /> {t('konfig3.pdf')}</button>
               <button onClick={reset} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-inputline text-textsec hover:border-accent hover:text-accent cursor-pointer"><RotateCcw size={16} /> {t('konfig3.resetBtn')}</button>
+              <button onClick={() => setBuyerOpen(true)} disabled={!price && cartCount === 0} className="flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-charcoal text-charcoal hover:bg-charcoal hover:text-white cursor-pointer disabled:opacity-40"><FileText size={16} /> {t('konfig3.pdf')}</button>
             </div>
           </div>
         </section>
@@ -1314,20 +1566,59 @@ export default function KonfiguratorTest() {
       {/* ── STICKY ZUSAMMENFASSUNG ── */}
       <aside className={`${box} p-5 flex flex-col gap-2.5 min-[1000px]:sticky min-[1000px]:top-5`}>
         <h2 className="m-0 text-[18px] font-extrabold">{t('konfig3.summary')}</h2>
-        <dl className="flex flex-col gap-1.5 text-[13px] m-0">
-          {rows.slice(0, 7).map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-3"><dt className="text-textmut flex-shrink-0">{k}</dt><dd className="m-0 font-semibold text-right text-charcoal">{v || '—'}</dd></div>
-          ))}
-        </dl>
-        {price ? (
+
+        {/* Sepette ürün varken üstteki mevcut-yapılandırma özeti GİZLİ — panel yalnız
+            sepet listesini gösterir (Murat kararı, seçenek B). Sepet boşken normal özet. */}
+        {!(hydrated && cartCount > 0) && (
           <>
-            <div className="flex justify-between items-baseline font-extrabold text-xl pt-2.5 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.netto')}</span><span>{fmtEur(price.total)}</span></div>
-            <span className="text-[11px] text-textmut">{t('konfig3.plusVat')}</span>
-            {needFlushConfirm && <span className="text-[11px] text-warnred font-semibold">{t('konfig3.flushRequired')}</span>}
-            {configIncomplete && <span className="text-[11px] text-warnred font-semibold">{needRalMissing ? t('konfig3.needRal') : t('konfig3.configIncomplete')}</span>}
-            <button onClick={add} disabled={needFlushConfirm || areaTooSmall || configIncomplete} className="kh-glow-btn mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 bg-accent text-white hover:brightness-90 cursor-pointer disabled:opacity-40 disabled:shadow-none"><ShoppingBag size={16} /> {t('konfig3.addToCart')}</button>
+            {price ? (
+              <>
+                {/* Ürün | Fiyat dökümü (eski konfig-özellik listesi yerine — Murat) */}
+                <div className="flex justify-between text-[11px] font-bold text-textmut uppercase tracking-wide pb-1.5 border-b border-linegray">
+                  <span>{t('konfig3.colProduct')}</span><span>{t('konfig3.colPrice')}</span>
+                </div>
+                <dl className="flex flex-col gap-1.5 text-[13px] m-0">
+                  {hasHarfPart && (
+                    <div className="flex justify-between gap-3"><dt className="text-textsec">{t('konfig3.prodHarf')}</dt><dd className="m-0 font-semibold text-right text-charcoal tabular-nums">{fmtEur(harfPart)}</dd></div>
+                  )}
+                  {hasLogoPart && (
+                    <div className="flex justify-between gap-3"><dt className="text-textsec">{t('konfig3.rLogo')}</dt><dd className="m-0 font-semibold text-right text-charcoal tabular-nums">{fmtEur(logoPart)}</dd></div>
+                  )}
+                  {hasCubukPart && (
+                    <div className="flex justify-between gap-3"><dt className="text-textsec">{t('konfig3.cubukLedRow')}</dt><dd className="m-0 font-semibold text-right text-charcoal tabular-nums">{fmtEur(cubukPart)}</dd></div>
+                  )}
+                </dl>
+                <div className="flex justify-between items-baseline font-extrabold text-xl pt-2.5 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.netto')}</span><span>{fmtEur(price.total)}</span></div>
+                <span className="text-[11px] text-textmut">{t('konfig3.plusVat')}</span>
+                {needFlushConfirm && <span className="text-[11px] text-warnred font-semibold">{t('konfig3.flushRequired')}</span>}
+                {configIncomplete && <span className="text-[11px] text-warnred font-semibold">{needRalMissing ? t('konfig3.needRal') : t('konfig3.configIncomplete')}</span>}
+                <button onClick={addAllAndGo} disabled={!price || needFlushConfirm || areaTooSmall || configIncomplete} className="kh-glow-btn mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 bg-accent text-white hover:brightness-90 cursor-pointer disabled:opacity-40 disabled:shadow-none"><ShoppingBag size={16} /> {t('konfig3.goToCart')}</button>
+              </>
+            ) : <p className="m-0 text-[12px] text-textmut">{t('konfig3.chooseForPrice')}</p>}
           </>
-        ) : <p className="m-0 text-[12px] text-textmut">{t('konfig3.chooseForPrice')}</p>}
+        )}
+
+        {/* Mini-Warenkorb: bereits hinzugefügte Positionen (Yazı 1 · Preis …) + Summe +
+            „Zum Warenkorb". Kunde bleibt auf der Seite und konfiguriert weitere Teile. */}
+        {hydrated && cartCount > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-[13px] font-extrabold text-charcoal">{t('konfig3.inCartTitle')} ({cartCount})</span>
+            <div className="flex flex-col gap-1 max-h-[260px] overflow-y-auto pr-1">
+              {cartItems.map((it, idx) => (
+                <div key={it.key} className="flex justify-between gap-3 text-[12px]">
+                  <span className="text-textsec truncate">{idx + 1}. {konfLabel(it.konfig) || it.name}{it.qty > 1 ? ` ×${it.qty}` : ''}</span>
+                  <span className="font-semibold text-charcoal whitespace-nowrap">{fmtEur(it.unitPrice * it.qty)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between font-extrabold text-[15px] pt-2 border-t border-linegray">
+              <span>{t('konfig3.cartSum')}</span><span>{fmtEur(cartNetSum)}</span>
+            </div>
+            <Link href="/warenkorb" className="mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-charcoal">
+              <ShoppingBag size={16} /> {t('konfig3.goToCart')}
+            </Link>
+          </div>
+        )}
       </aside>
 
       {/* ── EMPFÄNGERDATEN-MODAL (vor Angebotserstellung) ── */}
@@ -1481,21 +1772,24 @@ function summaryRows(sel, price, size, t) {
   const fontDef = KONFIG_FONTS.find((f) => f.id === sel.fontId);
   const fontBase = sel.fontId ? t(`konfig3.font.${sel.fontId}`, null, fontDef?.label || sel.fontId) : undefined;
   const font = sel.fontId === 'custom' && sel.customFontName ? `${fontBase} (${sel.customFontName})` : fontBase;
-  const rows = [
-    [t('konfig3.rSchriftzug'), sel.text?.trim()],
-    [t('konfig3.rFont'), font],
-    [t('konfig3.rMasse'), size ? t('konfig3.sizeSummary', { w: size.widthCm, h: size.heightCm, n: sel.heightCm }) : t('konfig3.sizeHeightOnly', { n: sel.heightCm })],
-    [t('konfig3.rType'), sel.lit === 'beleuchtet' ? t('konfig3.typeBeleuchtet') : sel.lit === 'unbeleuchtet' ? t('konfig3.typeUnbeleuchtet') : '—'],
-  ];
-  // Logo (falls mit gültigen Maßen angegeben) direkt nach den Buchstabenmaßen
+  // Logo / Çubuk LED önce hesaplanır — harfsiz üründe (metin boş) başlık bunlardan gelir.
   const lgCircle = sel.logoShape === 'circle';
   const lg = normalizeLogo(lgCircle
     ? { widthCm: sel.logoDiameterCm, heightCm: sel.logoDiameterCm }
     : { widthCm: sel.logoWidthCm, heightCm: sel.logoHeightCm });
-  if (lg) rows.splice(3, 0, [t('konfig3.rLogo'), `${lgCircle ? `Ø ${lg.heightCm}` : `${lg.widthCm} × ${lg.heightCm}`} cm${sel.logoName ? ` · ${sel.logoName}` : ''}`]);
-  // Çubuk LED (geçerliyse): ölçü + otomatik parça dökümü
   const cl = normalizeCubukLed({ lengthCm: sel.cubukLedCm, heightCm: sel.cubukLedHeightCm });
-  if (cl) rows.splice(lg ? 4 : 3, 0, [t('konfig3.cubukLedRow'), `${cl.lengthCm} × ${cl.heightCm} cm (${cubukLedPieces(cl.lengthCm).join(' + ')} cm)`]);
+  const hasText = !!sel.text?.trim();
+  const titleVal = hasText ? sel.text.trim()
+    : (lg && cl ? `${t('konfig3.rLogo')} + ${t('konfig3.cubukLedRow')}` : lg ? t('konfig3.rLogo') : cl ? t('konfig3.cubukLedRow') : '—');
+  // Harfsiz üründe Font/Buchstabenmaß satırları atlanır (harf yok, alakasız).
+  const rows = [[t('konfig3.rSchriftzug'), titleVal]];
+  if (hasText) {
+    rows.push([t('konfig3.rFont'), font]);
+    rows.push([t('konfig3.rMasse'), size ? t('konfig3.sizeSummary', { w: size.widthCm, h: size.heightCm, n: sel.heightCm }) : t('konfig3.sizeHeightOnly', { n: sel.heightCm })]);
+  }
+  if (lg) rows.push([t('konfig3.rLogo'), `${sel.logoMode === 'uv' ? `${t('konfig3.logoModeUv')} · ` : ''}${lgCircle ? `Ø ${lg.heightCm}` : `${lg.widthCm} × ${lg.heightCm}`} cm${sel.logoName ? ` · ${sel.logoName}` : ''}`]);
+  if (cl) rows.push([t('konfig3.cubukLedRow'), `${cl.lengthCm} × ${cl.heightCm} cm (${cubukLedPieces(cl.lengthCm).join(' + ')} cm)`]);
+  rows.push([t('konfig3.rType'), sel.lit === 'beleuchtet' ? t('konfig3.typeBeleuchtet') : sel.lit === 'unbeleuchtet' ? t('konfig3.typeUnbeleuchtet') : '—']);
   // Gesamtfläche (falls eingegeben) und Schriftzug-Fläche getrennt ausweisen (fürs Angebot).
   const sqm = (w, h) => (Math.round((w * h) / 100) / 100).toFixed(2).replace('.', ',');
   const aw = Number(sel.availWidth) || 0;
@@ -1543,6 +1837,10 @@ function summaryRows(sel, price, size, t) {
   if (sel.bohrschablone === true) {
     rows.push([t('konfig3.bohrschablone'), price?.bohrschablonePrice ? '+' + fmtEur(price.bohrschablonePrice) : '✓']);
   }
+  // UV Baskı (yalnız önden akrilikte checkbox görünür → seçiliyse satır). Fiyat harflere gömülü.
+  if (sel.uvBaski === true) rows.push([t('konfig3.rUvHarf'), '✓']);
+  if (sel.logoUv === true) rows.push([t('konfig3.rUvLogo'), '✓']);
+  if (sel.cubukUv === true) rows.push([t('konfig3.rUvCubuk'), '✓']);
   return rows;
 }
 
@@ -1573,7 +1871,7 @@ function LetterPriceTable({ price, t }) {
             </tr>
           ))}
           {price.logo && (
-            <tr><td className={td}>{t('konfig3.rLogo')}</td><td className={td + ' text-right text-textsec'}>{price.logo.widthCm}×{price.logo.heightCm} cm</td><td className={td + ' text-right font-semibold tabular-nums'}>{fmtEur(price.logo.total)}</td></tr>
+            <tr><td className={td}>{t('konfig3.rLogo')}{price.logo.print === 'uv' ? ` · ${t('konfig3.logoModeUv')}` : ''}</td><td className={td + ' text-right text-textsec'}>{price.logo.widthCm}×{price.logo.heightCm} cm</td><td className={td + ' text-right font-semibold tabular-nums'}>{fmtEur(price.logo.total)}</td></tr>
           )}
           {price.cubukLed && (
             <tr><td className={td}>{t('konfig3.cubukLedRow')}</td><td className={td + ' text-right text-textsec'}>{price.cubukLed.lengthCm}×{price.cubukLed.heightCm} cm</td><td className={td + ' text-right font-semibold tabular-nums'}>{fmtEur(price.cubukLed.total)}</td></tr>

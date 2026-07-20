@@ -13,7 +13,7 @@ const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
 export default function KasseClient() {
   const tx = useT();
   const { items, reseller, clear } = useCartStore();
-  const t = cartTotals(items, reseller?.rate || 0, null, null);
+  const t = cartTotals(items, reseller?.rate || 0);
   // Positionen über quoteHeight (50 cm) ODER angebotspflichtige Optionen (Profi-Montage,
   // Grundplatte/Tragprofil): Online-Zahlung gesperrt — automatisch Angebots-Anfrage.
   const hasOversize = items.some((i) => i.oversize || i.quoteOnly);
@@ -51,6 +51,7 @@ export default function KasseClient() {
             qty: i.qty,
             m2: i.m2 || null,
             konfig: i.konfig || null,
+            addon: i.addon === true,
             fileUrl: i.fileUrl || null,
             fileName: i.fileName || null,
             note: i.note || null,
