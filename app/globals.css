@@ -129,6 +129,20 @@ body {
   .theme-studio .kh-glow-btn { transition: none; }
 }
 
+/* ── Konfigürätör-Nav: pulsierender Glow-Ring (wie YILDIZ-CTA) ─────────────────
+   Themeneutral über --kh-accent (Studio = Säuregrün, sonst Blau). */
+@keyframes kh-nav-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--kh-accent) / 0.5), 0 0 16px 0 rgb(var(--kh-accent) / 0.30); }
+  70%      { box-shadow: 0 0 0 11px rgb(var(--kh-accent) / 0), 0 0 16px 0 rgb(var(--kh-accent) / 0.30); }
+}
+.kh-nav-pulse {
+  border-radius: 9px;
+  animation: kh-nav-pulse 2.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kh-nav-pulse { animation: none; }
+}
+
 /* Koyu zeminde ince ayrımlar */
 .theme-studio ::-webkit-scrollbar { width: 10px; height: 10px; }
 .theme-studio ::-webkit-scrollbar-track { background: #0a0b12; }

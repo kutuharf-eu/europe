@@ -46,7 +46,7 @@ export default function SiteNav() {
             <Link
               key={l.href}
               href={l.href}
-              className={`text-[15px] font-semibold whitespace-nowrap ${pathname === l.href ? 'text-accentlite' : 'text-lighttxt hover:text-accentlite'}`}
+              className={`text-[15px] font-semibold whitespace-nowrap ${pathname === l.href ? 'text-accentlite' : 'text-lighttxt hover:text-accentlite'} ${l.href === '/' ? 'kh-nav-pulse px-3 py-1.5' : ''}`}
             >
               {l.label}
             </Link>
@@ -80,7 +80,7 @@ export default function SiteNav() {
               key={l.href}
               href={l.href}
               onClick={() => setMobileOpen(false)}
-              className="px-5 py-3.5 text-[16px] font-medium text-lighttxt hover:text-accentlite"
+              className={`text-[16px] font-medium hover:text-accentlite ${l.href === '/' ? 'kh-nav-pulse self-start mx-5 my-1.5 px-3.5 py-2 text-accentlite' : 'px-5 py-3.5 text-lighttxt'}`}
             >
               {l.label}
             </Link>
