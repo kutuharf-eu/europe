@@ -129,18 +129,18 @@ body {
   .theme-studio .kh-glow-btn { transition: none; }
 }
 
-/* ── Konfigürätör-Nav: pulsierender Glow-Ring (wie YILDIZ-CTA) ─────────────────
+/* ── Konfigürätör-Nav: pulsierendes Neon-Textleuchten (kein Rahmen/Pill) ───────
    Themeneutral über --kh-accent (Studio = Säuregrün, sonst Blau). */
-@keyframes kh-nav-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--kh-accent) / 0.5), 0 0 16px 0 rgb(var(--kh-accent) / 0.30); }
-  70%      { box-shadow: 0 0 0 11px rgb(var(--kh-accent) / 0), 0 0 16px 0 rgb(var(--kh-accent) / 0.30); }
+@keyframes kh-nav-glow {
+  0%, 100% { text-shadow: 0 0 4px rgb(var(--kh-accent) / 0.55), 0 0 11px rgb(var(--kh-accent) / 0.35); }
+  50%      { text-shadow: 0 0 8px rgb(var(--kh-accent) / 0.95), 0 0 20px rgb(var(--kh-accent) / 0.60), 0 0 32px rgb(var(--kh-accent) / 0.38); }
 }
 .kh-nav-pulse {
-  border-radius: 9px;
-  animation: kh-nav-pulse 2.4s ease-out infinite;
+  color: rgb(var(--kh-accent));
+  animation: kh-nav-glow 2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .kh-nav-pulse { animation: none; }
+  .kh-nav-pulse { animation: none; text-shadow: 0 0 8px rgb(var(--kh-accent) / 0.5); }
 }
 
 /* Koyu zeminde ince ayrımlar */
