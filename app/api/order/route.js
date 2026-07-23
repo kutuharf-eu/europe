@@ -3,6 +3,7 @@ import { konfigDetail, KONFIG_LIMITS, normalizeLightColor, normalizeColor, norma
 import { serverKonfigPrice } from '@/lib/live-pricing';
 import { sanitizeV3Config, deriveV3PricingConfig, detailV3 } from '@/data/konfigurator3';
 import { rateLimit } from '@/utils/rateLimit';
+import { resolveHaendler } from '@/utils/haendlerAuth';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 const fmt = (n) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -40,6 +41,11 @@ export async function POST(request) {
   if (items.length > 50) {
     return Response.json({ error: 'Zu viele Positionen.' }, { status: 400 });
   }
+
+  // Händler kimliği (varsa): onaylı Händler → tüm konfigüratör kalemleri kendi kademesinin
+  // marjıyla fiyatlanır. marjKey token'dan türetilir; istemci gönderemez (fiyat kapısı).
+  const haendler = await resolveHaendler(request);
+  const marjKey = haendler?.marjKey;
 
   // Preise ausschließlich serverseitig aus den Produktdaten berechnen
   const recalc = [];
@@ -79,7 +85,7 @@ export async function POST(request) {
       const addon = item.addon === true && !s.config.text;
       // Preis serverseitig über die Live-Preisbrücke (Motor, Fallback: Legacy-Formel) —
       // exakt dieselbe Funktion wie /api/price, damit Anzeige und Bestellung übereinstimmen.
-      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone }, { addon });
+      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone }, { addon, marjKey });
       if (!p) return Response.json({ error: 'Ungültige Konfiguration.' }, { status: 400 });
       // Gespeichert werden nur geprüfte Produktionsfelder + serverseitig
       // abgeleitete Preis-IDs (Client-lightingId/constructionId werden ignoriert).
@@ -119,7 +125,7 @@ export async function POST(request) {
         fontId: item.konfig.fontId,
         montageId: item.konfig.montageId,
       };
-      const p = await serverKonfigPrice(cfg);
+      const p = await serverKonfigPrice(cfg, { marjKey });
       if (!p) return Response.json({ error: 'Ungültige Konfiguration.' }, { status: 400 });
       recalc.push({
         name: '3D-Buchstaben nach Maß',
@@ -220,6 +226,9 @@ export async function POST(request) {
     is_reseller: rate > 0,
     reseller_email: rate > 0 ? resellerEmail : null,
     notes: cleanNotes,
+    // B2B: onaylı Händler siparişiyse kimliği + hangi marj kademesiyle satıldığı.
+    haendler_id: haendler?.haendlerId || null,
+    price_tier: marjKey || null,
   };
 
   const postOrder = (row) =>
@@ -235,13 +244,19 @@ export async function POST(request) {
     });
 
   let insert = await postOrder(orderRow);
-  // Sicherheitsnetz: Fehlt die land-Spalte in der DB noch, darf die Bestellung nicht
-  // scheitern — dann ohne Spalte erneut versuchen und das Land in notes bewahren.
+  // Sicherheitsnetz: Fehlt eine noch nicht migrierte Spalte (land / haendler_id /
+  // price_tier), darf die Bestellung nicht scheitern — Spalte(n) entfernen und erneut
+  // versuchen; das Land wird in notes bewahrt.
   if (!insert.ok) {
     const errText = await insert.clone().text().catch(() => '');
+    const fallback = { ...orderRow };
     if (/\bland\b/i.test(errText)) {
-      const { land: _omit, ...fallback } = orderRow;
+      delete fallback.land;
       fallback.notes = [safeLand ? `Land: ${safeLand}` : null, cleanNotes].filter(Boolean).join('\n') || null;
+    }
+    if (/haendler_id/i.test(errText)) delete fallback.haendler_id;
+    if (/price_tier/i.test(errText)) delete fallback.price_tier;
+    if (Object.keys(fallback).length !== Object.keys(orderRow).length) {
       insert = await postOrder(fallback);
     }
   }

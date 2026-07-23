@@ -33,6 +33,7 @@ export default function SiteFooter() {
           <Link href="/impressum" className="text-[15px] text-lighttxt hover:text-accentlite">{t('footer.impressum')}</Link>
           <Link href="/datenschutz" className="text-[15px] text-lighttxt hover:text-accentlite">{t('footer.datenschutz')}</Link>
           <Link href="/agb" className="text-[15px] text-lighttxt hover:text-accentlite">{t('footer.agb')}</Link>
+          <Link href="/haendler" className="text-[15px] text-lighttxt hover:text-accentlite">Händlerbereich</Link>
         </div>
       </div>
     </footer>

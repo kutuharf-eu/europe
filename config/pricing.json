@@ -28,7 +28,7 @@
   "iscilikPerHarf": { "amount": 0, "currency": "TRY" },
   "riskYuzde": 3,
   "ambalajTaban": { "amount": 45, "currency": "EUR" },
-  "marj": { "rekabetci": 1.8, "standart": 2.0, "premium": 2.5 },
+  "marj": { "rekabetci": 1.8, "haendler_cok": 1.85, "haendler_az": 1.9, "standart": 2.0, "premium": 2.5 },
   "minSiparis": { "amount": 250, "currency": "EUR" },
   "kdv": 0.19,
   "usdTry": null,

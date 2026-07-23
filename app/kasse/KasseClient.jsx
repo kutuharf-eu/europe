@@ -6,6 +6,7 @@ import { useCartStore, cartTotals } from '@/store/cartStore';
 import { fmtEur, PRODUCTION_DAYS, versandfertigBis } from '@/data/categories';
 import { KONFIG_LIMITS } from '@/data/konfigurator';
 import { useT } from '@/components/LocaleProvider';
+import { withAuthHeaders } from '@/utils/haendlerSession';
 
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
@@ -38,9 +39,11 @@ export default function KasseClient() {
     setStatus('sending');
     setErrorMsg('');
     try {
+      // Händler girişliyse token eklenir → sunucu siparişi kendi kademe fiyatıyla hesaplar.
+      const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           ...form,
           resellerEmail: reseller?.email || null,

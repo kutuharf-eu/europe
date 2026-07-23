@@ -2,6 +2,7 @@
 // buraya sorar; fiyat SUNUCUDA hesaplanır (lib/live-pricing). Ham maliyet kalemleri,
 // fiyat değişkenleri ve uyarılar İSTEMCİYE DÖNMEZ — yalnız satış rakamları döner.
 import { serverKonfigPrice } from '@/lib/live-pricing';
+import { resolveHaendler } from '@/utils/haendlerAuth';
 
 export async function POST(request) {
   let body;
@@ -37,9 +38,13 @@ export async function POST(request) {
       : null,
   };
 
+  // Händler kimliği (varsa): onaylı Händler → kendi kademesinin marjı; aksi halde standart.
+  // marjKey token'dan türetilir, istemci gönderemez (fiyat manipülasyonu kapısı).
+  const haendler = await resolveHaendler(request);
+
   // addon: bağımsız ek ürün (ayrı sepete eklenen logo/çubuk) — proje-seviyesi ücretler
   // (ambalaj, minimum sipariş, montaj) uygulanmaz; yalnız üretim + kendi trafosu.
-  const p = await serverKonfigPrice(cfg, { addon: body.addon === true });
+  const p = await serverKonfigPrice(cfg, { addon: body.addon === true, marjKey: haendler?.marjKey });
   if (!p) return Response.json({ price: null });
 
   return Response.json({
@@ -62,6 +67,9 @@ export async function POST(request) {
       minApplied: !!p.minApplied,
       total: p.total,
       source: p.source,
+      // Onaylı Händler girişliyse true → UI "Händlerpreis" rozeti gösterir.
+      // Kademe (cok/az) İSTEMCİYE DÖNMEZ — Händler hangi kademede olduğunu görmez.
+      haendler: !!haendler,
     },
   });
 }

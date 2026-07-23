@@ -31,6 +31,7 @@ import {
   normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS,
 } from '@/data/konfigurator3';
 import { maxLetterHeight, KONFIG_FONT_CATS } from '@/data/konfigurator';
+import { withAuthHeaders } from '@/utils/haendlerSession';
 import { fmtEur } from '@/data/categories';
 import { supabase } from '@/utils/supabaseClient';
 import { KONFIG_RAL } from '@/data/konfigurator';
@@ -688,8 +689,10 @@ export default function KonfiguratorTest() {
     const tmr = setTimeout(async () => {
       try {
         const [text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed] = JSON.parse(priceKey);
+        // Händler girişliyse token eklenir → sunucu kendi kademe fiyatını döner.
+        const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
         const res = await fetch('/api/price', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers,
           body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed }),
           signal: ctl.signal,
         });
@@ -1531,6 +1534,13 @@ export default function KonfiguratorTest() {
             {/* Harf bazlı fiyat dökümü: Harf · Yükseklik · Fiyat + Logo/Trafo/Verpackung/Montage,
                 Summe = Gesamtpreis (Server liefert die Zeilen; lokale Schätzung hat keine) */}
             {price?.letterRows?.length > 0 && <LetterPriceTable price={price} t={t} />}
+            {/* Onaylı Händler girişliyse: fiyatların Händlerpreis olduğunu belirt (kademe gösterilmez). */}
+            {price?.haendler && (
+              <div className="flex items-center gap-2 pt-2">
+                <span className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ Händlerpreis</span>
+                <span className="text-[12px] text-textmut">Ihre Händlerkonditionen sind aktiv.</span>
+              </div>
+            )}
             {price ? (
               <div className="flex justify-between items-baseline font-extrabold text-2xl pt-3 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.totalNet')}</span><span>{fmtEur(price.total)}</span></div>
             ) : (
