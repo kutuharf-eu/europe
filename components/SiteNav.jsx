@@ -1,17 +1,50 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import LangSwitcher from '@/components/LangSwitcher';
 import { useT } from '@/components/LocaleProvider';
+import { supabase } from '@/utils/supabaseClient';
+
+// Händler durumu: giriş yoksa null; onaylı Händler ise 'approved' (nav'da yeşil rozet).
+function useHaendlerStatus() {
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const read = async (session) => {
+      if (!session?.user?.id) { if (alive) setStatus(null); return; }
+      const { data } = await supabase
+        .from('kutuharf_profiles').select('status,role').eq('id', session.user.id).single();
+      if (alive) setStatus(data?.role === 'haendler' ? data.status : null);
+    };
+    supabase.auth.getSession().then(({ data }) => read(data?.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => read(s));
+    return () => { alive = false; sub?.subscription?.unsubscribe?.(); };
+  }, []);
+  return status;
+}
 
 export default function SiteNav() {
   const t = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const itemCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
+  const haendlerStatus = useHaendlerStatus();
+
+  // Nav Händler göstergesi: onaylı → yeşil rozet ("çalışıyor" sinyali); değilse ince link.
+  const haendlerChip = haendlerStatus === 'approved' ? (
+    <Link href="/haendler" onClick={() => setMobileOpen(false)}
+      className="inline-flex items-center gap-1 bg-accentlite text-charcoal text-[13px] font-extrabold px-2.5 py-1.5 rounded whitespace-nowrap">
+      ★ Händler
+    </Link>
+  ) : (
+    <Link href="/haendler" onClick={() => setMobileOpen(false)}
+      className="text-[15px] font-semibold text-lighttxt hover:text-accentlite whitespace-nowrap">
+      Händler
+    </Link>
+  );
 
   const links = [
     { href: '/', label: t('nav.konfigurator') },
@@ -53,6 +86,7 @@ export default function SiteNav() {
               {l.label}
             </Link>
           ))}
+          {haendlerChip}
           <LangSwitcher />
           {cartButton}
         </div>
@@ -89,6 +123,7 @@ export default function SiteNav() {
               {l.label}
             </Link>
           ))}
+          <div className="px-5 py-2">{haendlerChip}</div>
           <div className="px-5 py-2"><LangSwitcher /></div>
         </div>
       )}
