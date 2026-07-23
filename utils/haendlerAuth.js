@@ -13,8 +13,11 @@ export async function resolveHaendler(request) {
   const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!token) return null;
 
-  const base = process.env.SUPABASE_URL;
-  const anon = process.env.SUPABASE_ANON_KEY;
+  // Env dayanıklılığı: SUPABASE_ANON_KEY / SUPABASE_URL Vercel'de tanımlı olmayabilir
+  // (şimdiye dek yalnız NEXT_PUBLIC_ sürümleri + SECRET kullanılıyordu). Anon anahtarı
+  // zaten public olduğundan sunucuda NEXT_PUBLIC sürümüne düşmek güvenlidir.
+  const base = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const service = process.env.SUPABASE_SECRET_KEY;
   if (!base || !anon || !service) return null;
 
