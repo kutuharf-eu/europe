@@ -3,6 +3,17 @@
 // fiyat değişkenleri ve uyarılar İSTEMCİYE DÖNMEZ — yalnız satış rakamları döner.
 import { serverKonfigPrice } from '@/lib/live-pricing';
 import { resolveHaendler } from '@/utils/haendlerAuth';
+import { KONFIG_LIMITS } from '@/data/konfigurator';
+
+// Teklif-boyutu: herhangi bir bileşen quoteHeight'i (50 cm) aşarsa iş online sipariş
+// dışıdır → PDF/Angebot Premium marjıyla fiyatlanır (pazarlık payı). Händler girişliyse
+// kendi kademesi önceliklidir (Händler büyük işte de Händler fiyatı alır).
+function isOversize(cfg) {
+  const h = Number(cfg.heightCm) || 0;
+  const lh = cfg.logo ? Number(cfg.logo.heightCm) || 0 : 0;
+  const ch = cfg.cubukLed ? Number(cfg.cubukLed.heightCm) || 0 : 0;
+  return h > KONFIG_LIMITS.quoteHeight || lh > KONFIG_LIMITS.quoteHeight || ch > KONFIG_LIMITS.quoteHeight;
+}
 
 export async function POST(request) {
   let body;
@@ -42,9 +53,14 @@ export async function POST(request) {
   // marjKey token'dan türetilir, istemci gönderemez (fiyat manipülasyonu kapısı).
   const haendler = await resolveHaendler(request);
 
+  // Marj önceliği: Händler kademesi > (oversize → Premium) > standart.
+  const oversize = isOversize(cfg);
+  const premiumQuote = oversize && !haendler;
+  const marjKey = haendler?.marjKey || (premiumQuote ? 'premium' : undefined);
+
   // addon: bağımsız ek ürün (ayrı sepete eklenen logo/çubuk) — proje-seviyesi ücretler
   // (ambalaj, minimum sipariş, montaj) uygulanmaz; yalnız üretim + kendi trafosu.
-  const p = await serverKonfigPrice(cfg, { addon: body.addon === true, marjKey: haendler?.marjKey });
+  const p = await serverKonfigPrice(cfg, { addon: body.addon === true, marjKey });
   if (!p) return Response.json({ price: null });
 
   return Response.json({
@@ -70,6 +86,8 @@ export async function POST(request) {
       // Onaylı Händler girişliyse true → UI "Händlerpreis" rozeti gösterir.
       // Kademe (cok/az) İSTEMCİYE DÖNMEZ — Händler hangi kademede olduğunu görmez.
       haendler: !!haendler,
+      // >50 cm teklif fiyatı Premium marjıyla üretildiyse true → UI "Angebotspreis" notu.
+      premiumQuote,
     },
   });
 }

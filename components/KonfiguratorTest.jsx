@@ -1541,6 +1541,13 @@ export default function KonfiguratorTest() {
                 <span className="text-[12px] text-textmut">Ihre Händlerkonditionen sind aktiv.</span>
               </div>
             )}
+            {/* >50 cm: Online-Bestellung gesperrt → Angebotspreis (Premium-Stufe). */}
+            {price?.premiumQuote && (
+              <div className="flex items-center gap-2 pt-2">
+                <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">Angebotspreis</span>
+                <span className="text-[12px] text-textmut">Über 50 cm — unverbindlicher Richtpreis, finales Angebot auf Anfrage.</span>
+              </div>
+            )}
             {price ? (
               <div className="flex justify-between items-baseline font-extrabold text-2xl pt-3 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.totalNet')}</span><span>{fmtEur(price.total)}</span></div>
             ) : (
