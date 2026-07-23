@@ -21,7 +21,9 @@ export async function POST(request) {
     fontId: typeof body.fontId === 'string' ? body.fontId : undefined,
     montageId: typeof body.montageId === 'string' ? body.montageId : 'selbst',
     trafo: body.trafo !== false,
-    logo: body.logo && typeof body.logo === 'object' ? { widthCm: body.logo.widthCm, heightCm: body.logo.heightCm } : null,
+    logo: body.logo && typeof body.logo === 'object'
+      ? { widthCm: body.logo.widthCm, heightCm: body.logo.heightCm, shape: body.logo.shape === 'circle' ? 'circle' : 'rect' }
+      : null,
     logoPrint: body.logoPrint === 'uv' ? 'uv' : null,
     uvBaski: body.uvBaski === true,
     logoUv: body.logoUv === true,
@@ -47,7 +49,7 @@ export async function POST(request) {
       lettersTotal: p.lettersTotal,
       letterRows: Array.isArray(p.letterRows) ? p.letterRows.map((r) => ({ ch: r.ch, heightCm: r.heightCm, price: r.price })) : null,
       logo: p.logo
-        ? { widthCm: p.logo.widthCm, heightCm: p.logo.heightCm, eqLetters: p.logo.eqLetters, perLetter: p.logo.perLetter, total: p.logo.total, print: p.logo.print || null, areaM2: p.logo.areaM2 || null }
+        ? { widthCm: p.logo.widthCm, heightCm: p.logo.heightCm, shape: p.logo.shape || 'rect', eqLetters: p.logo.eqLetters, perLetter: p.logo.perLetter, total: p.logo.total, print: p.logo.print || null, areaM2: p.logo.areaM2 || null }
         : null,
       cubukLed: p.cubukLed
         ? { lengthCm: p.cubukLed.lengthCm, heightCm: p.cubukLed.heightCm, pieces: p.cubukLed.pieces, eqLetters: p.cubukLed.eqLetters, perLetter: p.cubukLed.perLetter, total: p.cubukLed.total }

@@ -215,7 +215,9 @@ export const NETZTEIL_PRICE = 49;
 export const LOGO_WIDTH_FACTOR = 0.76;
 export const LOGO_LIMITS = { minCm: 10, maxWidth: 500, maxHeight: KONFIG_LIMITS.maxHeight };
 
-// Validiert Logo-Maße → { widthCm, heightCm } (gerundet) oder null.
+// Validiert Logo-Maße → { widthCm, heightCm, shape } (gerundet) oder null.
+// shape 'circle' → dairesel form: fiyat motoru çevreyi πd, LED'i πr² ile hesaplar
+// (23 Tem 2026 eCut yuvarlak kalibrasyonu); plaka (en×boy) her iki şekilde aynıdır.
 export function normalizeLogo(logo) {
   if (!logo || typeof logo !== 'object') return null;
   const w = Math.round(Number(logo.widthCm));
@@ -223,7 +225,7 @@ export function normalizeLogo(logo) {
   if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
   if (w < LOGO_LIMITS.minCm || w > LOGO_LIMITS.maxWidth) return null;
   if (h < LOGO_LIMITS.minCm || h > LOGO_LIMITS.maxHeight) return null;
-  return { widthCm: w, heightCm: h };
+  return { widthCm: w, heightCm: h, shape: logo.shape === 'circle' ? 'circle' : 'rect' };
 }
 
 // Wie viele „durchschnittliche Buchstaben" in Logohöhe entspricht das Logo? (min. 1)

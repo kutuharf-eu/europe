@@ -82,7 +82,7 @@ const fLexend = Lexend({ weight: '700', subsets: ['latin'], preload: false });
 const fKanit = Kanit({ weight: '700', subsets: ['latin'], preload: false });
 const fPrompt = Prompt({ weight: '700', subsets: ['latin'], preload: false });
 const fJost = Jost({ weight: '600', subsets: ['latin'], preload: false });
-const fArchivoNarrow = Archivo_Narrow({ weight: '700', subsets: ['latin'], preload: false });
+const fArchivoNarrow = Archivo_Narrow({ weight: '400', subsets: ['latin'], preload: false });
 const fBarlowCond = Barlow_Condensed({ weight: '700', subsets: ['latin'], preload: false });
 const fSairaCond = Saira_Condensed({ weight: '700', subsets: ['latin'], preload: false });
 const fTeko = Teko({ weight: '700', subsets: ['latin'], preload: false });
@@ -136,7 +136,7 @@ const FONT_PDF = {
   bungee: ['Bungee', 400], righteous: ['Righteous', 400], bangers: ['Bangers', 400], luckiest: ['Luckiest Guy', 400], titan: ['Titan One', 400],
   orbitron: ['Orbitron', 700], audiowide: ['Audiowide', 400], blackops: ['Black Ops One', 400], sairastencil: ['Saira Stencil One', 400],
   rubik: ['Rubik', 700], worksans: ['Work Sans', 700], barlow: ['Barlow', 700], mulish: ['Mulish', 800], manrope: ['Manrope', 700], sora: ['Sora', 700], exo2: ['Exo 2', 700], lexend: ['Lexend', 700], kanit: ['Kanit', 700], prompt: ['Prompt', 700], jost: ['Jost', 600],
-  archivonarrow: ['Archivo Narrow', 700], barlowcond: ['Barlow Condensed', 700], sairacond: ['Saira Condensed', 700], teko: ['Teko', 700], khand: ['Khand', 700], rajdhani: ['Rajdhani', 700], pathwaygothic: ['Pathway Gothic One', 400],
+  archivonarrow: ['Archivo Narrow', 400], barlowcond: ['Barlow Condensed', 700], sairacond: ['Saira Condensed', 700], teko: ['Teko', 700], khand: ['Khand', 700], rajdhani: ['Rajdhani', 700], pathwaygothic: ['Pathway Gothic One', 400],
   varelaround: ['Varela Round', 400], chewy: ['Chewy', 400], sniglet: ['Sniglet', 800], paytone: ['Paytone One', 400], concertone: ['Concert One', 400],
   merriweather: ['Merriweather', 700], lora: ['Lora', 700], ptserif: ['PT Serif', 700], zillaslab: ['Zilla Slab', 700], yeseva: ['Yeseva One', 400], bitter: ['Bitter', 700],
   passionone: ['Passion One', 700], bowlby: ['Bowlby One', 400], ultra: ['Ultra', 400], sigmar: ['Sigmar One', 400], rowdies: ['Rowdies', 700], fugaz: ['Fugaz One', 400],

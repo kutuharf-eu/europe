@@ -203,7 +203,7 @@ export function buildCfg(sel) {
   // ein reiner Buchstabenpreis (UI zeigt einen Hinweis).
   // Rund (Ø): Durchmesser wird als Breite = Höhe geführt (Preis/Vorschau identisch skaliert).
   const logo = normalizeLogo(sel.logoShape === 'circle'
-    ? { widthCm: sel.logoDiameterCm, heightCm: sel.logoDiameterCm }
+    ? { widthCm: sel.logoDiameterCm, heightCm: sel.logoDiameterCm, shape: 'circle' }
     : { widthCm: sel.logoWidthCm, heightCm: sel.logoHeightCm });
   // Çubuk LED (opsiyonel): uzunluk + yükseklik geçerliyse fiyata girer (harfler gibi).
   const cubukLed = normalizeCubukLed({ lengthCm: sel.cubukLedCm, heightCm: sel.cubukLedHeightCm });

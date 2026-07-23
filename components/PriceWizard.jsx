@@ -184,7 +184,7 @@ export default function PriceWizard({ view: initialView = 'internal' }) {
       {/* Metrikler */}
       {geo && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[['Net ön yüz alanı', f2(geo.toplamOnYuz) + ' m²'], ['Yanak çevresi', f2(geo.toplamCevre) + ' mt'],
+          {[['Plaka alanı (en×boy)', f2(geo.toplamPlaka) + ' m²'], ['Yanak çevresi', f2(geo.toplamCevre) + ' mt'],
             ['Harf sayısı', geo.N], ['LED modül', result.cost.ledAdet || '—']].map(([k, v]) => (
             <div key={k} className="bg-white border border-linegray px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-wider text-textmut font-bold">{k}</div>
@@ -310,7 +310,9 @@ export default function PriceWizard({ view: initialView = 'internal' }) {
               <span className="text-[11px] font-extrabold uppercase text-textmut mb-1">Adet kalemleri</span>
               <VarRow label="LED Samsung" value={vars.ledSamsung?.amount} currency="TL" onChange={setAmount('ledSamsung')} />
               <VarRow label="LED Standart" value={vars.ledStandart?.amount} currency="TL" onChange={setAmount('ledStandart')} />
-              <VarRow label="LED yoğunluğu" value={vars.ledYogunlugu} currency="ad/m²" onChange={setNum('ledYogunlugu')} />
+              <VarRow label="LED yoğunluğu (logo/kutu)" value={vars.ledYogunlugu} currency="ad/m²" onChange={setNum('ledYogunlugu')} />
+              <VarRow label="LED çevre katsayısı (harf)" value={vars.ledCevreKatsayi} currency="ad/mt" onChange={setNum('ledCevreKatsayi')} />
+              <VarRow label="LED taban (harf başına)" value={vars.ledHarfTaban} currency="adet" onChange={setNum('ledHarfTaban')} />
               <VarRow label="Watt / modül" value={vars.wattPerModul} currency="W" onChange={setNum('wattPerModul')} />
               {TRAFO_KADEMELER.map((k) => (
                 <VarRow key={k} label={`Trafo ${k} W`} value={vars.trafoFiyat?.[String(k)] || null} currency="TL" onChange={setTrafo(k)} missing={!(Number(vars.trafoFiyat?.[String(k)]) > 0)} />

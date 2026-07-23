@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "coeff": "node scripts/generate-coefficients.mjs",
+    "coeff:all": "node scripts/generate-all-coefficients.mjs",
     "test:motor": "node --test tests/motor.test.mjs"
   },
   "dependencies": {
