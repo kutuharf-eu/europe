@@ -403,6 +403,9 @@ const MARJ_TIERS = [
   // Üretim = reine Produktionskosten (×1,00) — kein Eingabefeld, dient als Referenz.
   { id: 'uretim', labelKey: 'tierUretim', hintKey: 'hintUretim', fixed: true },
   { id: 'rekabetci', labelKey: 'tierRekabetci', hintKey: 'hintRekabetci' },
+  // Händler kademeleri (B2B): onaylı satıcının kademesine göre otomatik uygulanır.
+  { id: 'haendler_cok', labelKey: 'tierHaendlerCok', hintKey: 'hintHaendlerCok' },
+  { id: 'haendler_az', labelKey: 'tierHaendlerAz', hintKey: 'hintHaendlerAz' },
   { id: 'standart', labelKey: 'tierStandart', hintKey: 'hintStandart' },
   { id: 'premium', labelKey: 'tierPremium', hintKey: 'hintPremium' },
 ];
