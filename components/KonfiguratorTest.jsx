@@ -838,6 +838,21 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   // Özet panelindeki CTA: tüm parçaları ekle + sepet sayfasına git ("Sepete git").
   const addAllAndGo = () => { if (!canAdd()) return; addAll(); router.push('/warenkorb'); };
 
+  // Mini-sepet "Sepete git": sepette ürün varken bile, o an yapılandırılmış ama HENÜZ
+  // sepette olmayan parçaları (harf/logo/çubuk) anahtar bazında ekler, sonra sepete gider.
+  // Böylece harfleri ekledikten sonra eklenen Logo/Çubuk LED sepet dışında KALMAZ. Anahtarı
+  // sepette olan parça mükerrer eklenmez (buildHarfItem logo/çubuğu ayıkladığından harf tekrar
+  // eklenmez). price yoksa hiçbir şey eklenmez — sadece sepete gidilir.
+  const addMissingAndGo = () => {
+    const keyOf = (it) => `${it.categorySlug}|${it.productSlug}|${it.detail}`;
+    const inCart = new Set(cartItems.map((i) => i.key));
+    const addIfMissing = (build) => { const it = build(); if (!inCart.has(keyOf(it))) addItem(it); };
+    if (hasHarfPart && canAdd()) addIfMissing(buildHarfItem);
+    if (hasLogoPart) addIfMissing(buildLogoItem);
+    if (hasCubukPart) addIfMissing(buildCubukItem);
+    router.push('/warenkorb');
+  };
+
   // Eski tekli (paket) ekleme — geri uyum; artık UI addAll/bölüm butonlarını kullanır.
   const add = () => {
     if (!canAdd()) return;
@@ -1639,9 +1654,9 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
             <div className="flex justify-between font-extrabold text-[15px] pt-2 border-t border-linegray">
               <span>{t('konfig3.cartSum')}</span><span>{fmtEur(cartNetSum)}</span>
             </div>
-            <Link href="/warenkorb" className="mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-charcoal">
+            <button type="button" onClick={addMissingAndGo} className="mt-1 flex items-center justify-center gap-2 text-[15px] font-semibold px-5 py-3.5 border-2 border-accent text-accent hover:bg-accent hover:text-charcoal cursor-pointer">
               <ShoppingBag size={16} /> {t('konfig3.goToCart')}
-            </Link>
+            </button>
           </div>
         )}
       </aside>
