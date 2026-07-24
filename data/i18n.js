@@ -414,6 +414,7 @@ export const TRANSLATIONS = {
     nav: {
       konfiguratorPrefix: '3D-Buchstaben ',
       konfigurator: 'Konfigurator',
+      haendler: 'Händler',
       login: 'Login',
       account: 'Login / Mein Konto',
       cartOpen: 'Warenkorb öffnen',
@@ -878,6 +879,7 @@ export const TRANSLATIONS = {
     nav: {
       konfiguratorPrefix: '3D-Harf ',
       konfigurator: 'Konfigüratör',
+      haendler: 'Bayi',
       login: 'Giriş',
       account: 'Giriş / Hesabım',
       cartOpen: 'Sepeti aç',
@@ -1345,6 +1347,7 @@ export const TRANSLATIONS = {
     nav: {
       konfiguratorPrefix: '3D Letter ',
       konfigurator: 'Configurator',
+      haendler: 'Reseller',
       login: 'Login',
       account: 'Login / My Account',
       cartOpen: 'Open cart',

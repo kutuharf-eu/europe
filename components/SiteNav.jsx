@@ -34,21 +34,22 @@ export default function SiteNav() {
   const haendlerStatus = useHaendlerStatus();
 
   // Nav Händler göstergesi: onaylı → yeşil rozet ("çalışıyor" sinyali); değilse ince link.
+  const haendlerLabel = t('nav.haendler', null, 'Händler');
   const haendlerChip = haendlerStatus === 'approved' ? (
     <Link href="/haendler" onClick={() => setMobileOpen(false)}
       className="inline-flex items-center gap-1 bg-accentlite text-charcoal text-[13px] font-extrabold px-2.5 py-1.5 rounded whitespace-nowrap">
-      ★ Händler
+      ★ {haendlerLabel}
     </Link>
   ) : (
     <Link href="/haendler" onClick={() => setMobileOpen(false)}
       className="text-[15px] font-semibold text-lighttxt hover:text-accentlite whitespace-nowrap">
-      Händler
+      {haendlerLabel}
     </Link>
   );
 
   const links = [
     { href: '/', label: t('nav.konfigurator') },
-    { href: '/kontakt', label: t('footer.contact', null, 'Kontakt') },
+    { href: '/kontakt', label: t('contact.kicker', null, 'Kontakt') },
   ];
 
   const cartButton = (
