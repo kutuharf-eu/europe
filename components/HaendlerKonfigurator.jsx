@@ -26,7 +26,7 @@ export default function HaendlerKonfigurator() {
 
   // Yükleniyor
   if (session === undefined || (session && profile === undefined)) {
-    return <div className="max-w-md mx-auto px-4 py-20 text-center text-textmut">…</div>;
+    return <div className="max-w-md mx-auto px-4 py-24 text-center text-white/60">…</div>;
   }
 
   // Giriş yok → Händlerbereich'e yönlendir
@@ -44,28 +44,32 @@ export default function HaendlerKonfigurator() {
 
   // Onaylı Händler → konfigüratör Händler modunda
   return (
-    <div>
-      <div className="bg-charcoal text-white px-6 py-4">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-1 bg-accentlite text-charcoal text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ Händler</span>
-            <p className="m-0 mt-1.5 text-sm text-white/70">
+    <>
+      <div className="bg-black/30 border-b border-white/10 px-12 py-4 max-sm:px-6">
+        <div className="max-w-[1180px] mx-auto flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="inline-flex self-start items-center gap-1 bg-accentlite text-charcoal text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ Händler</span>
+            <p className="m-0 text-sm text-white/70">
               {profile?.firma ? `${profile.firma} · ` : ''}Preise zu Ihren Händlerkonditionen.
             </p>
           </div>
           <Link href="/haendler" className="text-sm font-semibold text-white/80 hover:text-accentlite whitespace-nowrap">Mein Konto →</Link>
         </div>
       </div>
-      <KonfiguratorTest haendlerMode />
-    </div>
+      <main className="px-12 py-14 max-sm:px-6">
+        <div className="max-w-[1180px] mx-auto">
+          <KonfiguratorTest haendlerMode />
+        </div>
+      </main>
+    </>
   );
 }
 
 function Gate({ title, msg }) {
   return (
-    <div className="max-w-md mx-auto px-4 py-16 text-center">
-      <h1 className="text-2xl font-extrabold text-charcoal mb-2">{title}</h1>
-      <p className="text-sm text-textsec mb-6">{msg}</p>
+    <div className="max-w-md mx-auto px-4 py-24 text-center">
+      <h1 className="text-2xl font-extrabold text-white mb-2">{title}</h1>
+      <p className="text-sm text-white/70 mb-6">{msg}</p>
       <Link href="/haendler" className="inline-block bg-accent text-white font-bold px-5 py-3">Zum Händlerbereich</Link>
     </div>
   );

@@ -143,6 +143,9 @@ export const TRANSLATIONS = {
     },
     account: {
       myAccount: 'Mein Konto', logout: 'Abmelden', backend: 'Backend →', statusTitle: 'Händlerstatus',
+      myData: 'Meine Daten', email: 'E-Mail', memberSince: 'Mitglied seit',
+      stApproved: 'Freigeschaltet', stPending: 'In Prüfung', stRejected: 'Nicht freigegeben',
+      toKonfig: 'Zum Händler-Konfigurator →',
       kundeMsg: 'Sie sind als Kunde angemeldet. Sie sind Wiederverkäufer oder Agentur? Beantragen Sie den Händlerstatus — nach unserer Freischaltung kaufen Sie zu Sonderkonditionen ein.',
       haendlerWerden: 'Händler werden', firma: 'Firma', ansprech: 'Ansprechpartner', telefon: 'Telefon', steuer: 'Steuer-ID / USt-IdNr.',
       submitApply: 'Antrag absenden', sendingApply: 'Wird gesendet…', cancel: 'Abbrechen',
@@ -608,6 +611,9 @@ export const TRANSLATIONS = {
     },
     account: {
       myAccount: 'Hesabım', logout: 'Çıkış', backend: 'Backend →', statusTitle: 'Bayi Durumu',
+      myData: 'Bilgilerim', email: 'E-posta', memberSince: 'Üyelik tarihi',
+      stApproved: 'Onaylı', stPending: 'İncelemede', stRejected: 'Reddedildi',
+      toKonfig: 'Bayi konfigüratörüne →',
       kundeMsg: 'Müşteri olarak giriş yaptınız. Bayi veya ajans mısınız? Bayi statüsü başvurusu yapın — onayımızdan sonra özel koşullarla alışveriş yaparsınız.',
       haendlerWerden: 'Bayi ol', firma: 'Firma', ansprech: 'Yetkili kişi', telefon: 'Telefon', steuer: 'Vergi No / VKN',
       submitApply: 'Başvuruyu gönder', sendingApply: 'Gönderiliyor…', cancel: 'İptal',
@@ -1076,6 +1082,9 @@ export const TRANSLATIONS = {
     },
     account: {
       myAccount: 'My Account', logout: 'Log out', backend: 'Backend →', statusTitle: 'Reseller Status',
+      myData: 'My Details', email: 'Email', memberSince: 'Member since',
+      stApproved: 'Approved', stPending: 'Pending', stRejected: 'Rejected',
+      toKonfig: 'To the reseller configurator →',
       kundeMsg: 'You are logged in as a customer. Are you a reseller or agency? Apply for reseller status — after our approval you buy at special conditions.',
       haendlerWerden: 'Become a reseller', firma: 'Company', ansprech: 'Contact person', telefon: 'Phone', steuer: 'Tax ID / VAT ID',
       submitApply: 'Submit application', sendingApply: 'Sending…', cancel: 'Cancel',

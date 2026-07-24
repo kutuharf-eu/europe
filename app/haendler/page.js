@@ -1,3 +1,5 @@
+import SiteNav from '@/components/SiteNav';
+import SiteFooter from '@/components/SiteFooter';
 import HaendlerClient from '@/components/HaendlerClient';
 
 export const metadata = {
@@ -7,5 +9,12 @@ export const metadata = {
 };
 
 export default function HaendlerPage() {
-  return <HaendlerClient />;
+  return (
+    <div className="min-h-screen bg-sectionlight text-charcoal flex flex-col">
+      <div className="h-2 bg-accent" />
+      <SiteNav />
+      <div className="flex-1"><HaendlerClient /></div>
+      <SiteFooter />
+    </div>
+  );
 }

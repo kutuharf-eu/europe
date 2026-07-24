@@ -1,3 +1,5 @@
+import SiteNav from '@/components/SiteNav';
+import SiteFooter from '@/components/SiteFooter';
 import HaendlerKonfigurator from '@/components/HaendlerKonfigurator';
 
 export const metadata = {
@@ -7,5 +9,14 @@ export const metadata = {
 };
 
 export default function HaendlerKonfiguratorPage() {
-  return <HaendlerKonfigurator />;
+  return (
+    <div className="theme-studio min-h-screen bg-sectionlight text-charcoal">
+      <div className="h-2 bg-accent" />
+      <SiteNav />
+      <div className="kh-beams">
+        <HaendlerKonfigurator />
+      </div>
+      <SiteFooter />
+    </div>
+  );
 }

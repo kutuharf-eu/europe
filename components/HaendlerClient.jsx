@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
+import { useT } from '@/components/LocaleProvider';
 
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-1.5 text-sm font-semibold text-charcoal';
@@ -25,7 +26,7 @@ export default function HaendlerClient() {
   // Oturum açıkken kendi profilini oku (RLS: yalnız kendi satırı)
   useEffect(() => {
     if (!session?.user?.id) { setProfile(null); return; }
-    supabase.from('kutuharf_profiles').select('status,firma,role').eq('id', session.user.id).single()
+    supabase.from('kutuharf_profiles').select('status,firma,role,ust_id,telefon,created_at').eq('id', session.user.id).single()
       .then(({ data }) => setProfile(data || null));
   }, [session]);
 
@@ -140,40 +141,78 @@ function RegisterForm({ onDone }) {
 }
 
 function Konto({ session, profile }) {
+  const t = useT();
   const status = profile?.status;
   const logout = () => supabase.auth.signOut();
 
-  return (
-    <div className="max-w-md mx-auto px-4 py-14">
-      <h1 className="text-2xl font-extrabold text-charcoal mb-1">Mein Händlerkonto</h1>
-      <p className="text-sm text-textmut mb-6">{session.user.email}</p>
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
 
+  // Durum rozeti (renk + etiket). Kademe (haendler_tier) BİLİNÇLİ gösterilmez.
+  const statusBadge = {
+    approved: { cls: 'bg-green-100 text-green-800 border-green-600/30', label: t('account.stApproved') },
+    pending: { cls: 'bg-amber-100 text-amber-800 border-amber-500/30', label: t('account.stPending') },
+    rejected: { cls: 'bg-red-100 text-red-800 border-red-500/30', label: t('account.stRejected') },
+  }[status] || { cls: 'bg-gray-100 text-gray-600 border-gray-300', label: '—' };
+
+  const Row = ({ label, value }) => (
+    <div className="flex justify-between gap-4 py-2.5 border-b border-inputline last:border-0">
+      <dt className="text-sm text-textmut flex-shrink-0">{label}</dt>
+      <dd className="m-0 text-sm font-semibold text-charcoal text-right break-all">{value || '—'}</dd>
+    </div>
+  );
+
+  return (
+    <div className="max-w-lg mx-auto px-4 py-14">
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-extrabold text-charcoal m-0">{t('account.myAccount')}</h1>
+        <span className={`inline-flex items-center text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1 border ${statusBadge.cls}`}>
+          {statusBadge.label}
+        </span>
+      </div>
+
+      {/* Durum bandı */}
       {status === 'approved' && (
         <div className="border border-green-600/40 bg-green-50 p-5 mb-6">
-          <p className="font-bold text-green-800 mb-1">Zugang aktiv ✓</p>
+          <p className="font-bold text-green-800 mb-1">{t('account.stApproved')} ✓</p>
           <p className="text-sm text-green-900">Im Händler-Konfigurator sehen Sie automatisch Ihre <strong>Händlerpreise</strong>.</p>
-          <Link href="/haendler/konfigurator" className="inline-block mt-4 bg-accent text-white font-bold px-5 py-2.5">Zum Händler-Konfigurator</Link>
+          <Link href="/haendler/konfigurator" className="inline-block mt-4 bg-accent text-white font-bold px-5 py-2.5">{t('account.toKonfig')}</Link>
         </div>
       )}
       {status === 'pending' && (
         <div className="border border-amber-500/40 bg-amber-50 p-5 mb-6">
-          <p className="font-bold text-amber-800 mb-1">In Prüfung</p>
+          <p className="font-bold text-amber-800 mb-1">{t('account.stPending')}</p>
           <p className="text-sm text-amber-900">Ihre Anfrage wird bearbeitet. Sie erhalten eine E-Mail nach der Freigabe.</p>
         </div>
       )}
       {status === 'rejected' && (
         <div className="border border-red-500/40 bg-red-50 p-5 mb-6">
-          <p className="font-bold text-red-800 mb-1">Nicht freigegeben</p>
+          <p className="font-bold text-red-800 mb-1">{t('account.stRejected')}</p>
           <p className="text-sm text-red-900">Bei Fragen: info@kutuharf.eu</p>
         </div>
       )}
+
+      {/* Tüm Händler bilgileri */}
+      <div className="border border-inputline bg-white p-5 mb-6">
+        <h2 className="text-base font-extrabold text-charcoal mt-0 mb-2">{t('account.myData')}</h2>
+        <dl className="m-0">
+          <Row label={t('account.firma')} value={profile?.firma} />
+          <Row label={t('account.email')} value={session.user.email} />
+          <Row label={t('account.steuer')} value={profile?.ust_id} />
+          <Row label={t('account.telefon')} value={profile?.telefon} />
+          <Row label={t('account.statusTitle')} value={statusBadge.label} />
+          {memberSince && <Row label={t('account.memberSince')} value={memberSince} />}
+        </dl>
+      </div>
+
       {!profile && (
         <div className="border border-inputline p-5 mb-6">
           <p className="text-sm text-textsec">Kein Händlerprofil gefunden.</p>
         </div>
       )}
 
-      <button onClick={logout} className="text-sm font-bold text-textsec cursor-pointer">Abmelden</button>
+      <button onClick={logout} className="text-sm font-bold text-textsec cursor-pointer">{t('account.logout')}</button>
     </div>
   );
 }
