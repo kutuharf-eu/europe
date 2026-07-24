@@ -477,11 +477,15 @@ function VectorMass({ text, fontClass, fontFamily, widthCm, heightCm, availWidth
 // Voreingestellte Beispieltexte je Sprache — dienen zur Erkennung „unberührter" Eingaben.
 const DEFAULT_TEXTS = ['IHR SCHRIFTZUG', 'YAZINIZ', 'YOUR TEXT'];
 
-export default function KonfiguratorTest() {
+export default function KonfiguratorTest({ haendlerMode = false }) {
   const t = useT();
   const { locale } = useLocale();
   const router = useRouter();
-  const addItem = useCartStore((s) => s.addItem);
+  const rawAddItem = useCartStore((s) => s.addItem);
+  const setHaendlerMode = useCartStore((s) => s.setHaendlerMode);
+  // Händler bağlamında eklenen her ürün sepeti Händler-sepeti olarak işaretler → checkout
+  // Händler fiyatı ister. Ana sitede haendlerMode=false → işaretlenmez, standart kalır.
+  const addItem = (item) => { if (haendlerMode) setHaendlerMode(true); rawAddItem(item); };
   const cartItems = useCartStore((s) => s.items); // Özet panelindeki mini-sepet listesi için
   const removeItem = useCartStore((s) => s.removeItem); // sonuç bölümündeki ürün kutusundan kaldırma
   const [sel, setSel] = useState(DEFAULTS);
@@ -689,11 +693,14 @@ export default function KonfiguratorTest() {
     const tmr = setTimeout(async () => {
       try {
         const [text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed] = JSON.parse(priceKey);
-        // Händler girişliyse token eklenir → sunucu kendi kademe fiyatını döner.
-        const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
+        // Yalnız Händler bağlamında token + haendlerContext gönderilir → sunucu Händler fiyatı döner.
+        // Ana sitede token gönderilmez → daima standart/premium (son müşteri deneyimi).
+        const headers = haendlerMode
+          ? await withAuthHeaders({ 'Content-Type': 'application/json' })
+          : { 'Content-Type': 'application/json' };
         const res = await fetch('/api/price', {
           method: 'POST', headers,
-          body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed }),
+          body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed, haendlerContext: haendlerMode }),
           signal: ctl.signal,
         });
         if (res.ok) {

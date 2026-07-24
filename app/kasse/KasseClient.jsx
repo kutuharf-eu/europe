@@ -13,7 +13,7 @@ const labelCls = 'flex flex-col gap-2 text-sm font-semibold text-charcoal';
 
 export default function KasseClient() {
   const tx = useT();
-  const { items, reseller, clear } = useCartStore();
+  const { items, reseller, clear, haendlerMode } = useCartStore();
   const t = cartTotals(items, reseller?.rate || 0);
   // Positionen über quoteHeight (50 cm) ODER angebotspflichtige Optionen (Profi-Montage,
   // Grundplatte/Tragprofil): Online-Zahlung gesperrt — automatisch Angebots-Anfrage.
@@ -39,13 +39,17 @@ export default function KasseClient() {
     setStatus('sending');
     setErrorMsg('');
     try {
-      // Händler girişliyse token eklenir → sunucu siparişi kendi kademe fiyatıyla hesaplar.
-      const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
+      // Yalnız Händler-sepetinde (haendlerMode) token + haendlerContext gönderilir → sunucu
+      // siparişi Händler kademe fiyatıyla hesaplar. Ana site siparişi → standart fiyat.
+      const headers = haendlerMode
+        ? await withAuthHeaders({ 'Content-Type': 'application/json' })
+        : { 'Content-Type': 'application/json' };
       const res = await fetch('/api/order', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           ...form,
+          haendlerContext: haendlerMode,
           resellerEmail: reseller?.email || null,
           items: items.map((i) => ({
             categorySlug: i.categorySlug,

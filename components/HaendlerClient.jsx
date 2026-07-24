@@ -151,8 +151,8 @@ function Konto({ session, profile }) {
       {status === 'approved' && (
         <div className="border border-green-600/40 bg-green-50 p-5 mb-6">
           <p className="font-bold text-green-800 mb-1">Zugang aktiv ✓</p>
-          <p className="text-sm text-green-900">Im Konfigurator sehen Sie automatisch Ihre <strong>Händlerpreise</strong>.</p>
-          <Link href="/" className="inline-block mt-4 bg-accent text-white font-bold px-5 py-2.5">Zum Konfigurator</Link>
+          <p className="text-sm text-green-900">Im Händler-Konfigurator sehen Sie automatisch Ihre <strong>Händlerpreise</strong>.</p>
+          <Link href="/haendler/konfigurator" className="inline-block mt-4 bg-accent text-white font-bold px-5 py-2.5">Zum Händler-Konfigurator</Link>
         </div>
       )}
       {status === 'pending' && (

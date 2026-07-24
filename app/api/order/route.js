@@ -42,9 +42,10 @@ export async function POST(request) {
     return Response.json({ error: 'Zu viele Positionen.' }, { status: 400 });
   }
 
-  // Händler kimliği (varsa): onaylı Händler → tüm konfigüratör kalemleri kendi kademesinin
-  // marjıyla fiyatlanır. marjKey token'dan türetilir; istemci gönderemez (fiyat kapısı).
-  const haendler = await resolveHaendler(request);
+  // Händler fiyatı YALNIZ Händler siparişinde (haendlerContext=true; /haendler sepetinden)
+  // uygulanır. Ana site siparişi bayrağı göndermez → standart fiyat, Händler girişli olsa bile.
+  // marjKey yine token'dan türetilir; bayrak tek başına indirim vermez (fiyat kapısı).
+  const haendler = body.haendlerContext === true ? await resolveHaendler(request) : null;
   const marjKey = haendler?.marjKey;
 
   // Preise ausschließlich serverseitig aus den Produktdaten berechnen

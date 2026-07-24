@@ -49,9 +49,11 @@ export async function POST(request) {
       : null,
   };
 
-  // Händler kimliği (varsa): onaylı Händler → kendi kademesinin marjı; aksi halde standart.
-  // marjKey token'dan türetilir, istemci gönderemez (fiyat manipülasyonu kapısı).
-  const haendler = await resolveHaendler(request);
+  // Händler fiyatı YALNIZ Händler bağlamında (kutuharf.eu/haendler konfigüratörü) uygulanır.
+  // Ana site (son müşteri) haendlerContext göndermez → daima standart/premium fiyat görür,
+  // Händler girişli olsa bile. Bayrak istemciden gelir ama fiyatı yalnız sunucu-doğrulamalı
+  // token açar (resolveHaendler); bayrak tek başına indirim vermez → manipülasyon kapısı kapalı.
+  const haendler = body.haendlerContext === true ? await resolveHaendler(request) : null;
 
   // Marj önceliği: Händler kademesi > (oversize → Premium) > standart.
   const oversize = isOversize(cfg);

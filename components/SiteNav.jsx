@@ -34,6 +34,9 @@ export default function SiteNav() {
   const haendlerStatus = useHaendlerStatus();
 
   // Nav Händler göstergesi: onaylı → yeşil rozet ("çalışıyor" sinyali); değilse ince link.
+  // Händler rozeti YALNIZ /haendler sayfalarında görünür. Ana site (kutuharf.eu) saf son müşteri
+  // deneyimidir — rozet yok. Händler'ler /haendler'e footer'daki "Händlerbereich" linkinden ulaşır.
+  const inHaendler = pathname.startsWith('/haendler');
   const haendlerLabel = t('nav.haendler', null, 'Händler');
   const haendlerChip = haendlerStatus === 'approved' ? (
     <Link href="/haendler" onClick={() => setMobileOpen(false)}
@@ -87,7 +90,7 @@ export default function SiteNav() {
               {l.label}
             </Link>
           ))}
-          {haendlerChip}
+          {inHaendler && haendlerChip}
           <LangSwitcher />
           {cartButton}
         </div>
@@ -124,7 +127,7 @@ export default function SiteNav() {
               {l.label}
             </Link>
           ))}
-          <div className="px-5 py-2">{haendlerChip}</div>
+          {inHaendler && <div className="px-5 py-2">{haendlerChip}</div>}
           <div className="px-5 py-2"><LangSwitcher /></div>
         </div>
       )}

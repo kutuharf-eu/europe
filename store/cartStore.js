@@ -10,6 +10,9 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       reseller: null, // { email, rate } — im Händlerportal gesetzt (bei KUTUHARF derzeit ungenutzt)
+      // haendlerMode: true iken sepet Händler bağlamında oluşturuldu → checkout Händler fiyatı ister.
+      // Yalnız /haendler konfigüratöründen ürün eklenince true olur; sipariş sonrası (clear) sıfırlanır.
+      haendlerMode: false,
 
       addItem: (item) =>
         set((s) => {
@@ -41,8 +44,9 @@ export const useCartStore = create(
         set((s) => ({
           items: qty < 1 ? s.items.filter((i) => i.key !== key) : s.items.map((i) => (i.key === key ? { ...i, qty } : i)),
         })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], haendlerMode: false }),
       setReseller: (reseller) => set({ reseller }),
+      setHaendlerMode: (haendlerMode) => set({ haendlerMode }),
     }),
     { name: 'rs-cart' }
   )
