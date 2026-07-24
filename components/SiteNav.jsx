@@ -9,9 +9,12 @@ import { useT } from '@/components/LocaleProvider';
 import { supabase } from '@/utils/supabaseClient';
 
 // Händler durumu: giriş yoksa null; onaylı Händler ise 'approved' (nav'da yeşil rozet).
-function useHaendlerStatus() {
+// enabled=false iken (ana site — rozet zaten gizli) HİÇ sorgu yapılmaz — gereksiz
+// Supabase çağrısı B2C ziyaretçilerde önlenir.
+function useHaendlerStatus(enabled) {
   const [status, setStatus] = useState(null);
   useEffect(() => {
+    if (!enabled) { setStatus(null); return; }
     let alive = true;
     const read = async (session) => {
       if (!session?.user?.id) { if (alive) setStatus(null); return; }
@@ -22,7 +25,7 @@ function useHaendlerStatus() {
     supabase.auth.getSession().then(({ data }) => read(data?.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => read(s));
     return () => { alive = false; sub?.subscription?.unsubscribe?.(); };
-  }, []);
+  }, [enabled]);
   return status;
 }
 
@@ -31,12 +34,11 @@ export default function SiteNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const itemCount = useCartStore((s) => s.items.reduce((n, i) => n + i.qty, 0));
-  const haendlerStatus = useHaendlerStatus();
-
   // Nav Händler göstergesi: onaylı → yeşil rozet ("çalışıyor" sinyali); değilse ince link.
   // Händler rozeti YALNIZ /haendler sayfalarında görünür. Ana site (kutuharf.eu) saf son müşteri
   // deneyimidir — rozet yok. Händler'ler /haendler'e footer'daki "Händlerbereich" linkinden ulaşır.
   const inHaendler = pathname.startsWith('/haendler');
+  const haendlerStatus = useHaendlerStatus(inHaendler);
   const haendlerLabel = t('nav.haendler', null, 'Händler');
   const haendlerChip = haendlerStatus === 'approved' ? (
     <Link href="/haendler" onClick={() => setMobileOpen(false)}

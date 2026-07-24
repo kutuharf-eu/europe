@@ -7,12 +7,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import { useT } from '@/components/LocaleProvider';
+import { useCartStore } from '@/store/cartStore';
 
 const inputCls = 'p-3 text-base font-sans border border-inputline bg-white text-charcoal w-full';
 const labelCls = 'flex flex-col gap-1.5 text-sm font-semibold text-charcoal';
 const btnCls = 'bg-accent text-white font-bold px-5 py-3 cursor-pointer disabled:opacity-40 transition';
 
 export default function HaendlerClient() {
+  const t = useT();
   const [session, setSession] = useState(undefined); // undefined = yükleniyor
   const [profile, setProfile] = useState(null);
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -38,11 +40,11 @@ export default function HaendlerClient() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-14">
-      <h1 className="text-2xl font-extrabold text-charcoal mb-1">Händlerbereich</h1>
-      <p className="text-sm text-textmut mb-6">Für Werbeagenturen & Wiederverkäufer — Preise zu Händlerkonditionen.</p>
+      <h1 className="text-2xl font-extrabold text-charcoal mb-1">{t('account.areaTitle')}</h1>
+      <p className="text-sm text-textmut mb-6">{t('account.areaSubtitle')}</p>
 
       <div className="flex border border-inputline mb-6">
-        {[['login', 'Anmelden'], ['register', 'Registrieren']].map(([id, label]) => (
+        {[['login', t('account.tabLogin')], ['register', t('account.tabRegister')]].map(([id, label]) => (
           <button key={id} onClick={() => setMode(id)}
             className={`flex-1 py-2.5 text-sm font-bold cursor-pointer transition ${mode === id ? 'bg-accent text-white' : 'bg-white text-textsec hover:bg-gray-50'}`}>
             {label}
@@ -56,6 +58,7 @@ export default function HaendlerClient() {
 }
 
 function LoginForm() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,25 +69,26 @@ function LoginForm() {
     setBusy(true); setErr('');
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setBusy(false);
-    if (error) setErr('Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.');
+    if (error) setErr(t('auth.loginError'));
     // Erfolg → onAuthStateChange rendert Konto-Ansicht.
   };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className={labelCls}>E-Mail
+      <label className={labelCls}>{t('auth.email')}
         <input type="email" required className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
       </label>
-      <label className={labelCls}>Passwort
+      <label className={labelCls}>{t('auth.password')}
         <input type="password" required className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
       </label>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <button type="submit" disabled={busy} className={btnCls}>{busy ? 'Anmelden…' : 'Anmelden'}</button>
+      <button type="submit" disabled={busy} className={btnCls}>{busy ? t('auth.signingIn') : t('auth.signIn')}</button>
     </form>
   );
 }
 
 function RegisterForm({ onDone }) {
+  const t = useT();
   const [f, setF] = useState({ firma: '', ustId: '', telefon: '', email: '', password: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -101,41 +105,41 @@ function RegisterForm({ onDone }) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) setOk(true);
-      else setErr(data.error || 'Registrierung fehlgeschlagen.');
-    } catch { setErr('Netzwerkfehler. Bitte erneut versuchen.'); }
+      else setErr(data.error || t('account.regFail'));
+    } catch { setErr(t('account.regNet')); }
     setBusy(false);
   };
 
   if (ok) {
     return (
       <div className="border border-accent/40 bg-accent/5 p-5">
-        <p className="font-bold text-charcoal mb-1">Anfrage eingegangen ✓</p>
-        <p className="text-sm text-textsec">Wir prüfen Ihre Angaben und schalten Ihren Zugang frei. Sie erhalten eine E-Mail, sobald Sie sich mit Händlerpreisen anmelden können.</p>
-        <button onClick={onDone} className="mt-4 text-sm font-bold text-accent cursor-pointer">→ Zur Anmeldung</button>
+        <p className="font-bold text-charcoal mb-1">{t('account.regDoneTitle')}</p>
+        <p className="text-sm text-textsec">{t('account.regDoneMsg')}</p>
+        <button onClick={onDone} className="mt-4 text-sm font-bold text-accent cursor-pointer">{t('account.regToLogin')}</button>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className={labelCls}>Firma
+      <label className={labelCls}>{t('account.firma')}
         <input required className={inputCls} value={f.firma} onChange={set('firma')} />
       </label>
-      <label className={labelCls}>USt-IdNr
+      <label className={labelCls}>{t('account.regUstId')}
         <input required className={inputCls} value={f.ustId} onChange={set('ustId')} placeholder="DE…" />
       </label>
-      <label className={labelCls}>Telefon
+      <label className={labelCls}>{t('account.telefon')}
         <input required className={inputCls} value={f.telefon} onChange={set('telefon')} autoComplete="tel" />
       </label>
-      <label className={labelCls}>E-Mail
+      <label className={labelCls}>{t('auth.email')}
         <input type="email" required className={inputCls} value={f.email} onChange={set('email')} autoComplete="email" />
       </label>
-      <label className={labelCls}>Passwort (mind. 8 Zeichen)
+      <label className={labelCls}>{t('account.regPw')}
         <input type="password" required minLength={8} className={inputCls} value={f.password} onChange={set('password')} autoComplete="new-password" />
       </label>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <button type="submit" disabled={busy} className={btnCls}>{busy ? 'Senden…' : 'Registrierung absenden'}</button>
-      <p className="text-xs text-textmut">Nach Prüfung durch unser Team wird Ihr Zugang freigeschaltet.</p>
+      <button type="submit" disabled={busy} className={btnCls}>{busy ? t('account.regSending') : t('account.regSubmit')}</button>
+      <p className="text-xs text-textmut">{t('account.regHint')}</p>
     </form>
   );
 }
@@ -143,7 +147,11 @@ function RegisterForm({ onDone }) {
 function Konto({ session, profile }) {
   const t = useT();
   const status = profile?.status;
-  const logout = () => supabase.auth.signOut();
+  const cartClear = useCartStore((s) => s.clear);
+  const cartIsHaendler = useCartStore((s) => s.haendlerMode);
+  // Çıkışta Händler-sepeti temizlenir: token gidince fiyatlar standart'a döneceğinden
+  // sepette kalan Händler-fiyatlı kalemler tutarsızlık yaratmasın (B2C sepetine dokunulmaz).
+  const logout = () => { if (cartIsHaendler) cartClear(); supabase.auth.signOut(); };
 
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -176,20 +184,20 @@ function Konto({ session, profile }) {
       {status === 'approved' && (
         <div className="border border-green-600/40 bg-green-50 p-5 mb-6">
           <p className="font-bold text-green-800 mb-1">{t('account.stApproved')} ✓</p>
-          <p className="text-sm text-green-900">Im Händler-Konfigurator sehen Sie automatisch Ihre <strong>Händlerpreise</strong>.</p>
+          <p className="text-sm text-green-900">{t('account.approvedMsg')}</p>
           <Link href="/haendler/konfigurator" className="inline-block mt-4 bg-accent text-white font-bold px-5 py-2.5">{t('account.toKonfig')}</Link>
         </div>
       )}
       {status === 'pending' && (
         <div className="border border-amber-500/40 bg-amber-50 p-5 mb-6">
           <p className="font-bold text-amber-800 mb-1">{t('account.stPending')}</p>
-          <p className="text-sm text-amber-900">Ihre Anfrage wird bearbeitet. Sie erhalten eine E-Mail nach der Freigabe.</p>
+          <p className="text-sm text-amber-900">{t('account.pendingMsg')}</p>
         </div>
       )}
       {status === 'rejected' && (
         <div className="border border-red-500/40 bg-red-50 p-5 mb-6">
           <p className="font-bold text-red-800 mb-1">{t('account.stRejected')}</p>
-          <p className="text-sm text-red-900">Bei Fragen: info@kutuharf.eu</p>
+          <p className="text-sm text-red-900">{t('account.rejectedMsg')}</p>
         </div>
       )}
 

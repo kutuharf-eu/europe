@@ -6,8 +6,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import KonfiguratorTest from '@/components/KonfiguratorTest';
+import { useT } from '@/components/LocaleProvider';
 
 export default function HaendlerKonfigurator() {
+  const t = useT();
   const [session, setSession] = useState(undefined); // undefined = yükleniyor
   const [profile, setProfile] = useState(undefined); // undefined = yükleniyor
 
@@ -48,12 +50,12 @@ export default function HaendlerKonfigurator() {
       <div className="bg-black/30 border-b border-white/10 px-12 py-4 max-sm:px-6">
         <div className="max-w-[1180px] mx-auto flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1.5">
-            <span className="inline-flex self-start items-center gap-1 bg-accentlite text-charcoal text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ Händler</span>
+            <span className="inline-flex self-start items-center gap-1 bg-accentlite text-charcoal text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ {t('nav.haendler', null, 'Händler')}</span>
             <p className="m-0 text-sm text-white/70">
-              {profile?.firma ? `${profile.firma} · ` : ''}Preise zu Ihren Händlerkonditionen.
+              {profile?.firma ? `${profile.firma} · ` : ''}{t('account.haendlerKonditionen')}
             </p>
           </div>
-          <Link href="/haendler" className="text-sm font-semibold text-white/80 hover:text-accentlite whitespace-nowrap">Mein Konto →</Link>
+          <Link href="/haendler" className="text-sm font-semibold text-white/80 hover:text-accentlite whitespace-nowrap">{t('account.myAccount')} →</Link>
         </div>
       </div>
       <main className="px-12 py-14 max-sm:px-6">

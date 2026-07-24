@@ -485,11 +485,14 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   const setHaendlerMode = useCartStore((s) => s.setHaendlerMode);
   // Händler bağlamında eklenen her ürün sepeti Händler-sepeti olarak işaretler → checkout
   // Händler fiyatı ister. Ana sitede haendlerMode=false → işaretlenmez, standart kalır.
-  const addItem = (item) => { if (haendlerMode) setHaendlerMode(true); rawAddItem(item); };
+  const addItem = (item) => { if (haendlerMode) setHaendlerMode(true); rawAddItem({ ...item, haendler: haendlerMode }); };
   const cartItems = useCartStore((s) => s.items); // Özet panelindeki mini-sepet listesi için
   const removeItem = useCartStore((s) => s.removeItem); // sonuç bölümündeki ürün kutusundan kaldırma
+  const cartHaendlerMode = useCartStore((s) => s.haendlerMode); // sepetin fiyat bağlamı (Händler/standart)
+  const cartClear = useCartStore((s) => s.clear);
   const [sel, setSel] = useState(DEFAULTS);
   const [partAdded, setPartAdded] = useState(false); // çok parçalı proje: "sepete eklendi" bildirimi
+  const [ctxConflict, setCtxConflict] = useState(null); // karma sepet: bekleyen ekleme fn'i (onay modalı)
   const [hydrated, setHydrated] = useState(false); // mini-sepet SSR/CSR uyumsuzluğunu önlemek için
   const [logoOpen, setLogoOpen] = useState(false); // Logo bölümü: varsayılan gizli, tıklayınca açılır
   const [cubukOpen, setCubukOpen] = useState(false); // Çubuk LED bölümü: varsayılan gizli, tıklayınca açılır
@@ -825,9 +828,16 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
     const c = buildCfg(s2);
     return { categorySlug: 'werbetechnik', productSlug: 'konfigurator-3d-buchstaben', name: konfLabel(c) || t('konfig3.cubukLedRow'), detail: detail3(s2), unitPrice: cubukPart, konfig: c, addon: true };
   };
-  const addHarf = () => { if (hasHarfPart && canAdd()) { addItem(buildHarfItem()); setPartAdded(true); } };
-  const addLogoPart = () => { if (hasLogoPart) { addItem(buildLogoItem()); setPartAdded(true); } };
-  const addCubukPart = () => { if (hasCubukPart) { addItem(buildCubukItem()); setPartAdded(true); } };
+  // ── Karma sepet koruması ─────────────────────────────────────────────────────
+  // Sepette farklı fiyat bağlamı (Händler ↔ standart) varsa ekleme durdurulur ve
+  // kullanıcıya "sepeti temizle & ekle / vazgeç" sorulur. Böylece B2B ve B2C ürünleri
+  // asla aynı sepette karışmaz → checkout tek haendlerContext ile tutarlı kalır.
+  const cartCtxDiffers = () => cartItems.length > 0 && cartHaendlerMode !== haendlerMode;
+  const guardAdd = (doAdd) => { if (cartCtxDiffers()) { setCtxConflict(() => doAdd); return; } doAdd(); };
+
+  const addHarf = () => guardAdd(() => { if (hasHarfPart && canAdd()) { addItem(buildHarfItem()); setPartAdded(true); } });
+  const addLogoPart = () => guardAdd(() => { if (hasLogoPart) { addItem(buildLogoItem()); setPartAdded(true); } });
+  const addCubukPart = () => guardAdd(() => { if (hasCubukPart) { addItem(buildCubukItem()); setPartAdded(true); } });
   const addAll = () => {
     if (!canAdd()) return;
     if (hasHarfPart) addItem(buildHarfItem());
@@ -836,22 +846,23 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
     setPartAdded(true);
   };
   // Özet panelindeki CTA: tüm parçaları ekle + sepet sayfasına git ("Sepete git").
-  const addAllAndGo = () => { if (!canAdd()) return; addAll(); router.push('/warenkorb'); };
+  const addAllAndGo = () => guardAdd(() => { if (!canAdd()) return; addAll(); router.push('/warenkorb'); });
 
   // Mini-sepet "Sepete git": sepette ürün varken bile, o an yapılandırılmış ama HENÜZ
   // sepette olmayan parçaları (harf/logo/çubuk) anahtar bazında ekler, sonra sepete gider.
   // Böylece harfleri ekledikten sonra eklenen Logo/Çubuk LED sepet dışında KALMAZ. Anahtarı
   // sepette olan parça mükerrer eklenmez (buildHarfItem logo/çubuğu ayıkladığından harf tekrar
   // eklenmez). price yoksa hiçbir şey eklenmez — sadece sepete gidilir.
-  const addMissingAndGo = () => {
+  const addMissingAndGo = () => guardAdd(() => {
     const keyOf = (it) => `${it.categorySlug}|${it.productSlug}|${it.detail}`;
-    const inCart = new Set(cartItems.map((i) => i.key));
+    // Sepet durumu store'dan taze okunur — karma-sepet onayında clear() sonrası doğru çalışır.
+    const inCart = new Set(useCartStore.getState().items.map((i) => i.key));
     const addIfMissing = (build) => { const it = build(); if (!inCart.has(keyOf(it))) addItem(it); };
     if (hasHarfPart && canAdd()) addIfMissing(buildHarfItem);
     if (hasLogoPart) addIfMissing(buildLogoItem);
     if (hasCubukPart) addIfMissing(buildCubukItem);
     router.push('/warenkorb');
-  };
+  });
 
   // Eski tekli (paket) ekleme — geri uyum; artık UI addAll/bölüm butonlarını kullanır.
   const add = () => {
@@ -1559,8 +1570,8 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
             {/* Onaylı Händler girişliyse: fiyatların Händlerpreis olduğunu belirt (kademe gösterilmez). */}
             {price?.haendler && (
               <div className="flex items-center gap-2 pt-2">
-                <span className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">★ Händlerpreis</span>
-                <span className="text-[12px] text-textmut">Ihre Händlerkonditionen sind aktiv.</span>
+                <span className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[12px] font-extrabold uppercase tracking-wide px-2.5 py-1">{t('account.haendlerBadge')}</span>
+                <span className="text-[12px] text-textmut">{t('account.haendlerActive')}</span>
               </div>
             )}
             {/* >50 cm: Online-Bestellung gesperrt → Angebotspreis (Premium-Stufe). */}
@@ -1660,6 +1671,20 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
           </div>
         )}
       </aside>
+
+      {/* ── KARMA SEPET UYARISI (Händler ↔ standart karışımı engellenir) ── */}
+      {ctxConflict && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setCtxConflict(null)}>
+          <div className={`${box} w-full max-w-[440px] p-6 flex flex-col gap-3`} onClick={(e) => e.stopPropagation()}>
+            <h3 className="m-0 text-lg font-extrabold text-charcoal">{t('account.mixTitle')}</h3>
+            <p className="m-0 text-sm text-textsec leading-relaxed">{t('account.mixMsg')}</p>
+            <div className="flex gap-3 mt-1">
+              <button type="button" onClick={() => { const fn = ctxConflict; cartClear(); setCtxConflict(null); fn(); }} className="flex-1 bg-accent text-white font-bold px-4 py-3 cursor-pointer hover:brightness-90">{t('account.mixClearAdd')}</button>
+              <button type="button" onClick={() => setCtxConflict(null)} className="flex-1 border-2 border-inputline text-charcoal font-bold px-4 py-3 cursor-pointer hover:bg-gray-50">{t('account.mixCancel')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── EMPFÄNGERDATEN-MODAL (vor Angebotserstellung) ── */}
       {buyerOpen && (
