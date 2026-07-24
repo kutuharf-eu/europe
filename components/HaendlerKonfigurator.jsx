@@ -32,16 +32,14 @@ export default function HaendlerKonfigurator() {
   }
 
   // Giriş yok → Händlerbereich'e yönlendir
-  if (!session) return <Gate title="Anmeldung erforderlich" msg="Bitte melden Sie sich mit Ihrem Händlerkonto an, um zu Händlerkonditionen zu konfigurieren." />;
+  if (!session) return <Gate title={t('account.gateLoginTitle')} msg={t('account.gateLoginMsg')} />;
 
   const status = profile?.status;
   if (status !== 'approved') {
-    const msg = status === 'pending'
-      ? 'Ihr Händlerzugang wird noch geprüft. Nach der Freigabe sehen Sie hier automatisch Ihre Händlerpreise.'
-      : status === 'rejected'
-      ? 'Ihr Zugang wurde nicht freigegeben. Bei Fragen: info@kutuharf.eu'
-      : 'Für diesen Bereich ist ein freigeschaltetes Händlerkonto nötig.';
-    return <Gate title="Kein Händlerzugang" msg={msg} />;
+    const msg = status === 'pending' ? t('account.gatePending')
+      : status === 'rejected' ? t('account.gateRejected')
+      : t('account.gateDefault');
+    return <Gate title={t('account.gateNoAccessTitle')} msg={msg} />;
   }
 
   // Onaylı Händler → konfigüratör Händler modunda
@@ -68,11 +66,12 @@ export default function HaendlerKonfigurator() {
 }
 
 function Gate({ title, msg }) {
+  const t = useT();
   return (
     <div className="max-w-md mx-auto px-4 py-24 text-center">
       <h1 className="text-2xl font-extrabold text-white mb-2">{title}</h1>
       <p className="text-sm text-white/70 mb-6">{msg}</p>
-      <Link href="/haendler" className="inline-block bg-accent text-white font-bold px-5 py-3">Zum Händlerbereich</Link>
+      <Link href="/haendler" className="inline-block bg-accent text-white font-bold px-5 py-3">{t('account.gateBtn')}</Link>
     </div>
   );
 }
