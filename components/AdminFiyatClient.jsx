@@ -401,6 +401,9 @@ function ExtrasSection({ extras, onSave, busy }) {
 // Örnek konfigürasyon MÜŞTERİ modeliyle (tip → ışık yönü / malzeme) seçilir ve
 // buildCfg ile fiyat cfg'sine çevrilir → admin ve müşteri birebir aynı kombinasyon.
 const MARJ_TIERS = [
+  // Salt malzeme = nur physisches Material (Platten, LED, Schrauben, Kleber, Kabel);
+  // ohne Trafo, Montageaufwand, Verpackung und Versand. Referenzwert, kein Eingabefeld.
+  { id: 'malzeme', labelKey: 'tierMalzeme', hintKey: 'hintMalzeme', fixed: true, material: true },
   // Üretim = reine Produktionskosten (×1,00) — kein Eingabefeld, dient als Referenz.
   { id: 'uretim', labelKey: 'tierUretim', hintKey: 'hintUretim', fixed: true },
   { id: 'rekabetci', labelKey: 'tierRekabetci', hintKey: 'hintRekabetci' },
@@ -471,7 +474,9 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey }) {
   // Kutu altı örnek fiyat: Üretim = maliyet ×1,00; kademeler = maliyet × girilen çarpan
   // (kaydedilmemiş girişler de anında yansır).
   const costEUR = res?.ok ? res.cost.orderEUR : null;
+  const materialEUR = res?.ok ? (res.cost.materialEUR ?? null) : null;
   const tierPrice = (tier) => {
+    if (tier.material) return materialEUR;      // salt malzeme — marjdan bağımsız
     if (costEUR == null) return null;
     if (tier.fixed) return costEUR;
     const mv = Number(m[tier.id]);
@@ -497,7 +502,12 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey }) {
               <div key={tier.id} className="flex flex-col gap-1">
                 <label className={`flex flex-col gap-1 border px-3 py-2 bg-white flex-1 ${tier.id === 'standart' ? 'border-accent' : 'border-inputline'}`}>
                   <span className="text-[12px] font-bold">{t('admin.' + tier.labelKey)} {tier.id === 'standart' && <span className="text-accent">{t('admin.active')}</span>}</span>
-                  {tier.fixed ? (
+                  {tier.material ? (
+                    /* Salt malzeme: çarpanı yok — değer kutunun altındaki fiyat satırında. */
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[15px] font-bold w-[90px] inline-block py-1.5 text-textmut">—</span>
+                    </span>
+                  ) : tier.fixed ? (
                     <span className="flex items-center gap-1.5">
                       <span className="text-textmut text-[13px]">×</span>
                       <span className="text-[15px] font-bold w-[90px] inline-block py-1.5">1,00</span>
