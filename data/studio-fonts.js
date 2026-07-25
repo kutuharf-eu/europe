@@ -33,6 +33,31 @@ export const fontById = (id) => STUDIO_FONTS.find((f) => f.id === id) || STUDIO_
 
 const loaded = new Map();
 
+/** Google Fonts stil dosyasını ekler ve gerçekten yüklenene kadar bekler. */
+function ensureFontLink(f) {
+  const existing = document.querySelector(`link[data-studio-font="${f.family}"]`);
+  if (existing?.dataset.ready === '1') return Promise.resolve();
+
+  const link = existing || document.createElement('link');
+  if (!existing) {
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family).replace(/%20/g, '+')}:wght@${f.weight}&display=swap`;
+    link.dataset.studioFont = f.family;
+  }
+
+  return new Promise((resolve) => {
+    const done = () => {
+      link.dataset.ready = '1';
+      resolve();
+    };
+    link.addEventListener('load', done, { once: true });
+    link.addEventListener('error', done, { once: true });
+    // Ağ takılırsa çizim sonsuza kadar beklemesin.
+    setTimeout(done, 4000);
+    if (!existing) document.head.appendChild(link);
+  });
+}
+
 /**
  * Fontu Google Fonts'tan yükler ve tarayıcı gerçekten hazır olunca çözülür.
  * Konva metni fonttan ÖNCE çizerse yedek yazı tipiyle kalır — bu yüzden çağıran
@@ -45,17 +70,11 @@ export function loadStudioFont(fontId) {
   if (!f) return Promise.resolve();
   if (loaded.has(f.family)) return loaded.get(f.family);
 
-  const href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family).replace(/%20/g, '+')}:wght@${f.weight}&display=swap`;
-  if (!document.querySelector(`link[data-studio-font="${f.family}"]`)) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.dataset.studioFont = f.family;
-    document.head.appendChild(link);
-  }
-
-  const p = document
-    .fonts.load(`${f.weight} 48px "${f.family}"`)
+  // ÖNEMLİ: stil dosyası inmeden document.fonts.load() çağrılırsa @font-face henüz
+  // tanımlı değildir; çağrı sessizce boş döner ve font hiç yüklenmez (tuvalde yedek
+  // yazı tipi kalır). Bu yüzden önce link'in yüklenmesi beklenir.
+  const p = ensureFontLink(f)
+    .then(() => document.fonts.load(`${f.weight} 48px "${f.family}"`))
     .then(() => document.fonts.ready)
     .then(() => undefined)
     .catch(() => undefined);

@@ -12,9 +12,10 @@ import PricePanel from '@/components/studio/panels/PricePanel';
 import DesignActions from '@/components/studio/panels/DesignActions';
 import TemplateBar from '@/components/studio/panels/TemplateBar';
 import { ownerToken } from '@/lib/studio/owner';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useStudioStore } from '@/store/studioStore';
 import { useT } from '@/components/LocaleProvider';
+import { translate, LOCALES, DEFAULT_LOCALE } from '@/data/i18n';
 
 const StudioCanvas = dynamic(() => import('@/components/studio/StudioCanvas'), {
   ssr: false,
@@ -25,6 +26,22 @@ export default function StudioClient() {
   const t = useT();
   const night = useStudioStore((s) => s.view.night);
   const loadDesign = useStudioStore((s) => s.loadDesign);
+  const addText = useStudioStore((s) => s.addText);
+  const seededRef = useRef(false);
+
+  // Boş tuval yerine hazır bir yazı ile açılır ("YAZINIZ") — kullanıcı ne yapacağını
+  // hemen görür, rengi zemine göre kontrastlı doğar (gri zeminde beyaz).
+  // Dil doğrudan cookie'den okunur: LocaleProvider dili kendi effect'inde geç
+  // ayarlıyor ve o ana kadar beklemek metni her zaman Almanca bırakıyordu.
+  useEffect(() => {
+    if (seededRef.current) return;
+    if (new URLSearchParams(window.location.search).get('d')) return; // kayıtlı tasarım gelecek
+    if (useStudioStore.getState().elements.length) return;
+    seededRef.current = true;
+    const m = document.cookie.match(/(?:^|; )rs-lang=([^;]*)/);
+    const locale = m && LOCALES.includes(decodeURIComponent(m[1])) ? decodeURIComponent(m[1]) : DEFAULT_LOCALE;
+    addText({ text: translate(locale, 'studio.defaultText') });
+  }, [addText]);
 
   // ?d=<id> ile gelinirse kaydedilmiş tasarım yüklenir — yalnız aynı tarayıcının
   // owner_token'ı eşleşiyorsa (başkasının tasarımı açılamaz).

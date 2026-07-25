@@ -19,7 +19,7 @@ import {
   TEXT_LIMITS,
   SHAPE_LIMITS,
   shapeLimitsFor,
-  elementLabel,
+  translatedElementLabel,
   elementSizeCm,
   textLines,
 } from '@/lib/studio/model';
@@ -147,7 +147,7 @@ export default function ToolPanel() {
       </Section>
 
       {el ? (
-        <Section title={elementLabel(el)}>
+        <Section title={translatedElementLabel(t, el)}>
           {el.type === 'text' && (
             <>
               <div className="mb-1">

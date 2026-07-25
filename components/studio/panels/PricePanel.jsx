@@ -90,7 +90,7 @@ export default function PricePanel() {
               return (
                 <li key={it.key} className="flex items-baseline justify-between gap-3">
                   <span className="truncate text-white/70">
-                    {it.label}
+                    {it.labelKey ? t(`studio.elementLabels.${it.labelKey}`, null, it.label) : it.label}
                     {it.addon && <span className="ml-1 text-[10px] text-white/30">+</span>}
                   </span>
                   <span className="shrink-0 tabular-nums text-white/85">

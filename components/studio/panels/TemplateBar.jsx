@@ -50,9 +50,13 @@ export default function TemplateBar() {
             onClick={() => apply(tpl)}
             className="shrink-0 rounded-lg border border-white/12 bg-white/5 px-3 py-2 text-left transition hover:border-white/30 hover:bg-white/10"
           >
-            <span className="block text-sm font-semibold text-white/85">{tpl.title}</span>
+            <span className="block text-sm font-semibold text-white/85">
+              {t(`studio.templateTitles.${tpl.slug}`, null, tpl.title)}
+            </span>
             {tpl.branche && (
-              <span className="block text-[11px] text-white/40">{tpl.branche}</span>
+              <span className="block text-[11px] text-white/40">
+                {t(`studio.templateBranches.${tpl.branche}`, null, tpl.branche)}
+              </span>
             )}
           </button>
         ))}

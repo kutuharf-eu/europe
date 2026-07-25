@@ -5,7 +5,7 @@
 
 import { useStudioStore } from '@/store/studioStore';
 import { useT } from '@/components/LocaleProvider';
-import { elementLabel, textLines } from '@/lib/studio/model';
+import { translatedElementLabel, textLines } from '@/lib/studio/model';
 
 export default function LayerList() {
   const t = useT();
@@ -26,8 +26,8 @@ export default function LayerList() {
           el.type === 'text'
             ? `${lines[0] || '—'}${lines.length > 1 ? ` (+${lines.length - 1})` : ''}`
             : el.type === 'image'
-              ? el.name || elementLabel(el)
-              : elementLabel(el);
+              ? el.name || translatedElementLabel(t, el)
+              : translatedElementLabel(t, el);
 
         return (
           <li key={el.id}>

@@ -83,6 +83,19 @@ export const TRANSLATIONS = {
         warmweiss: 'Warmweiß (3.000 K)', neutralweiss: 'Neutralweiß (4.000 K)',
         kaltweiss: 'Kaltweiß (6.000 K)', rgb: 'RGB (mehrfarbig, steuerbar)',
       },
+      elementLabels: {
+        text: 'Schriftzug', rect: 'Rechteck', circle: 'Kreis', star: 'Stern',
+        bar: 'Leuchtbalken', image: 'Bild/Logo',
+      },
+      templateTitles: {
+        cafe: 'Café / Bistro', restaurant: 'Restaurant', friseur: 'Friseur / Salon',
+        baeckerei: 'Bäckerei', boutique: 'Boutique / Mode', werkstatt: 'KFZ-Werkstatt',
+      },
+      templateBranches: {
+        Gastronomie: 'Gastronomie', Handel: 'Handel',
+        Dienstleistung: 'Dienstleistung', Handwerk: 'Handwerk',
+      },
+      defaultText: 'IHR TEXT',
       templates: 'Vorlagen', templatesHint: '— als Startpunkt, danach frei anpassbar',
       templateConfirm: 'Die Vorlage ersetzt Ihren aktuellen Entwurf. Fortfahren?',
       imageUploading: 'Bild wird hochgeladen…',
@@ -646,6 +659,19 @@ export const TRANSLATIONS = {
         warmweiss: 'Sıcak beyaz (3.000 K)', neutralweiss: 'Nötr beyaz (4.000 K)',
         kaltweiss: 'Soğuk beyaz (6.000 K)', rgb: 'RGB (çok renkli, kumandalı)',
       },
+      elementLabels: {
+        text: 'Yazı', rect: 'Dikdörtgen', circle: 'Daire', star: 'Yıldız',
+        bar: 'Işıklı çubuk', image: 'Görsel/Logo',
+      },
+      templateTitles: {
+        cafe: 'Kafe / Bistro', restaurant: 'Restoran', friseur: 'Kuaför / Salon',
+        baeckerei: 'Fırın / Pastane', boutique: 'Butik / Moda', werkstatt: 'Oto Servis',
+      },
+      templateBranches: {
+        Gastronomie: 'Gastronomi', Handel: 'Ticaret',
+        Dienstleistung: 'Hizmet', Handwerk: 'Zanaat',
+      },
+      defaultText: 'YAZINIZ',
       templates: 'Şablonlar', templatesHint: '— başlangıç noktası, sonra serbestçe düzenlenir',
       templateConfirm: 'Şablon mevcut tasarımınızın yerine geçecek. Devam edilsin mi?',
       imageUploading: 'Görsel yükleniyor…',
@@ -1212,6 +1238,19 @@ export const TRANSLATIONS = {
         warmweiss: 'Warm white (3,000 K)', neutralweiss: 'Neutral white (4,000 K)',
         kaltweiss: 'Cool white (6,000 K)', rgb: 'RGB (multicolour, controllable)',
       },
+      elementLabels: {
+        text: 'Lettering', rect: 'Rectangle', circle: 'Circle', star: 'Star',
+        bar: 'Light bar', image: 'Image/Logo',
+      },
+      templateTitles: {
+        cafe: 'Café / Bistro', restaurant: 'Restaurant', friseur: 'Hairdresser / Salon',
+        baeckerei: 'Bakery', boutique: 'Boutique / Fashion', werkstatt: 'Car Workshop',
+      },
+      templateBranches: {
+        Gastronomie: 'Gastronomy', Handel: 'Retail',
+        Dienstleistung: 'Services', Handwerk: 'Trade',
+      },
+      defaultText: 'YOUR TEXT',
       templates: 'Templates', templatesHint: '— a starting point, fully editable afterwards',
       templateConfirm: 'The template will replace your current design. Continue?',
       imageUploading: 'Uploading image…',
