@@ -4,6 +4,8 @@ import { serverKonfigPrice } from '@/lib/live-pricing';
 import { sanitizeV3Config, deriveV3PricingConfig, detailV3 } from '@/data/konfigurator3';
 import { rateLimit } from '@/utils/rateLimit';
 import { resolveHaendler } from '@/utils/haendlerAuth';
+import { supabaseServer } from '@/utils/supabaseServer';
+import { priceDesign } from '@/lib/studio/priceItems';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 const fmt = (n) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -61,6 +63,50 @@ export async function POST(request) {
     const itemDatencheck = !!item.datencheck;
     if (itemDatencheck) datencheckCount++;
     const meta = { fileUrl: itemFileUrl, fileName: itemFileName, note: itemNote, datencheck: itemDatencheck };
+
+    // Schilder-Designer (/studio): Der Client schickt NUR die Entwurfs-ID — Maße,
+    // Elemente und Preis kommen aus dem in der DB gespeicherten Entwurf und werden
+    // hier komplett neu berechnet (dieselbe Funktion wie die Live-Vorschau).
+    if (item.konfig?.studioDesignId) {
+      const sb = supabaseServer();
+      if (!sb) return Response.json({ error: 'Bestellung derzeit nicht möglich.' }, { status: 503 });
+
+      const { data: entwurf } = await sb
+        .from('kutuharf_designs')
+        .select('id,design,preview_url')
+        .eq('id', String(item.konfig.studioDesignId).slice(0, 64))
+        .maybeSingle();
+      if (!entwurf?.design) {
+        return Response.json({ error: 'Entwurf nicht gefunden.' }, { status: 400 });
+      }
+
+      const priced = await priceDesign(entwurf.design);
+      // Über quoteHeight nur per Angebot — wie beim Konfigurator.
+      if (priced.premiumQuote) {
+        return Response.json(
+          { error: `Elemente über ${KONFIG_LIMITS.quoteHeight} cm — bitte per Angebots-Anfrage bestellen.` },
+          { status: 400 }
+        );
+      }
+      if (!priced.total || priced.items.some((p) => !p.priced)) {
+        return Response.json({ error: 'Entwurf konnte nicht berechnet werden.' }, { status: 400 });
+      }
+
+      const sign = entwurf.design.sign || {};
+      recalc.push({
+        name: 'Schilder-Designer Entwurf',
+        categorySlug: 'werbetechnik',
+        productSlug: 'konfigurator-3d-buchstaben',
+        detail: `Entwurf ${entwurf.id.slice(0, 8)} · ${priced.items.length} Position(en) · Schild ${sign.widthCm || '—'}×${sign.heightCm || '—'} cm`,
+        // Üretim tarafı tasarımı görebilsin diye önizleme + id saklanır.
+        konfig: { studioDesignId: entwurf.id, previewUrl: entwurf.preview_url || null },
+        qty,
+        unitPrice: priced.total,
+        lineTotal: round2(priced.total * qty),
+        ...meta,
+      });
+      continue;
+    }
 
     // v3-Konfigurator (/konfigurator-test): strikte Allowlist + serverseitig
     // abgeleitete Preis-IDs. Nur bei markiertem v3-Flag; v1/v2 bleiben unberührt.

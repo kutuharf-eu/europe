@@ -18,6 +18,7 @@ export default function PricePanel() {
   const lighting = useStudioStore((s) => s.lighting);
   const product = useStudioStore((s) => s.product);
   const sign = useStudioStore((s) => s.sign);
+  const setPriceInfo = useStudioStore((s) => s.setPriceInfo);
 
   const design = useMemo(() => ({ elements, lighting, product }), [elements, lighting, product]);
   const { items, warnings } = useMemo(() => toPricingItems(design), [design]);
@@ -48,6 +49,12 @@ export default function PricePanel() {
         const data = await res.json();
         lastSig.current = signature;
         setState({ status: 'ready', data });
+        // Sepet/teklif butonları güncel fiyatı ve teklif zorunluluğunu buradan okur.
+        setPriceInfo({
+          total: data.total || 0,
+          premiumQuote: !!data.premiumQuote,
+          ready: !data.items?.some((p) => !p.priced),
+        });
       } catch (e) {
         if (e.name === 'AbortError') return;
         setState({ status: 'error', data: null });

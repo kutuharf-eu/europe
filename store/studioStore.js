@@ -60,6 +60,9 @@ export const useStudioStore = create((set, get) => ({
   designId: null,
   /** Tuvalin PNG önizlemesini üreten fonksiyon; StudioCanvas kendini burada kaydeder. */
   previewFn: null,
+  /** Son hesaplanan fiyat — PricePanel yazar, sepet/teklif butonları okur.
+   *  premiumQuote: 50 cm üstü iş → online sipariş yok, yalnız teklif. */
+  priceInfo: { total: 0, premiumQuote: false, ready: false },
   /** @type {import('@/lib/studio/model').StudioElement[]} */
   elements: [],
   selectedId: null,
@@ -240,6 +243,7 @@ export const useStudioStore = create((set, get) => ({
 
   setDesignId: (designId) => set({ designId }),
   setPreviewFn: (previewFn) => set({ previewFn }),
+  setPriceInfo: (priceInfo) => set({ priceInfo }),
 
   /** Kaydedilmiş tasarımı geri yükler — geçmiş sıfırlanır (yeni oturum sayılır). */
   loadDesign: (design, designId = null) =>
