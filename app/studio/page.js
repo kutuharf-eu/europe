@@ -1,12 +1,13 @@
 import StudioClient from '@/components/studio/StudioClient';
 
-// Tasarım Stüdyosu — Faz 0 (PoC): mevcut konfigüratör (ana sayfa) hiç etkilenmez,
-// stüdyo tamamen ayrı rotada büyür. Plan: STUDIO-PLAN.md
+// Tasarım Stüdyosu — mevcut konfigüratör (ana sayfa) hiç etkilenmez, stüdyo ayrı
+// rotada yaşar. Plan: STUDIO-PLAN.md
+// Entwurflar online sipariş edilmez; akış her zaman teklif talebiyle sonuçlanır.
 export const metadata = {
-  title: 'Schilder-Designer — Leuchtreklame online gestalten | KUTUHARF',
+  title: 'Schilder-Designer — Leuchtschild online gestalten | KUTUHARF',
   description:
-    'Gestalten Sie Ihr Leuchtschild online: Schriftzug, Logo und Maße frei platzieren — mit Preisvorschau. Deutschlandweiter Versand.',
-  robots: { index: false, follow: false },
+    'Gestalten Sie Ihr Leuchtschild online: Schriftzug, Logo, Formen und Maße frei platzieren, Farben und Beleuchtung wählen — mit Sofort-Preisvorschau und Angebot. Deutschlandweiter Versand.',
+  alternates: { canonical: '/studio' },
 };
 
 export default function StudioPage() {

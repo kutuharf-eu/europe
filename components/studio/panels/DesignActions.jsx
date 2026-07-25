@@ -6,7 +6,6 @@
 
 import { useState } from 'react';
 import { useStudioStore } from '@/store/studioStore';
-import { useCartStore } from '@/store/cartStore';
 import { useT } from '@/components/LocaleProvider';
 import { ownerToken } from '@/lib/studio/owner';
 import QuoteDialog from '@/components/studio/QuoteDialog';
@@ -23,14 +22,8 @@ export default function DesignActions() {
   const setDesignId = useStudioStore((s) => s.setDesignId);
   const designPayload = useStudioStore((s) => s.designPayload);
   const previewFn = useStudioStore((s) => s.previewFn);
-  const priceInfo = useStudioStore((s) => s.priceInfo);
-  const addItem = useCartStore((s) => s.addItem);
 
-  // 50 cm üstü iş motorda online sipariş dışı → yalnız teklif yolu açık.
-  const quoteOnly = priceInfo.premiumQuote;
-  const priceTotal = priceInfo.total;
-
-  const [status, setStatus] = useState('idle'); // idle | saving | saved | incart | error
+  const [status, setStatus] = useState('idle'); // idle | saving | saved | error
   const [quoteOpen, setQuoteOpen] = useState(false);
 
   /** @returns {Promise<string|null>} kaydedilen tasarımın id'si */
@@ -71,47 +64,14 @@ export default function DesignActions() {
     }
   };
 
-  // Sepete ekleme: önce kaydedilir, sepete YALNIZ tasarım id'si gider — fiyatı
-  // /api/order tasarımdan yeniden hesaplar (istemci fiyat/ölçü göndermez).
-  const addToCart = async () => {
-    setStatus('saving');
-    const id = await save();
-    if (!id) return;
-    addItem({
-      categorySlug: 'werbetechnik',
-      productSlug: 'konfigurator-3d-buchstaben',
-      name: t('studio.cartItemName', null, 'Schilder-Designer Entwurf'),
-      detail: `${t('studio.cartItemName', null, 'Entwurf')} ${id.slice(0, 8)}`,
-      unitPrice: priceTotal || 0,
-      konfig: { studioDesignId: id },
-      qty: 1,
-    });
-    setStatus('incart');
-  };
-
   return (
     <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4">
-      {/* 50 cm üstü iş online sipariş dışı → yalnız teklif (motorun kuralı). */}
-      {!quoteOnly && (
-        <button className={`${btnPrimary} mb-2`} disabled={!count || status === 'saving'} onClick={addToCart}>
-          {t('studio.addToCart', null, 'In den Warenkorb')}
-        </button>
-      )}
-
-      <button
-        className={quoteOnly ? btnPrimary : btn}
-        disabled={!count}
-        onClick={() => setQuoteOpen(true)}
-      >
+      {/* Stüdyo işleri online sipariş edilmez: zemin, montaj ve özel formlar
+          teklifte netleşir (Murat'ın kararı, 25 Tem). Tek yol teklif talebi. */}
+      <button className={btnPrimary} disabled={!count} onClick={() => setQuoteOpen(true)}>
         {t('studio.requestQuote', null, 'Angebot anfordern')}
       </button>
-
-      {quoteOnly && (
-        <p className="mt-2 text-[11px] leading-relaxed text-amber-200/80">{t('studio.quoteOnlyNote')}</p>
-      )}
-      {status === 'incart' && (
-        <p className="mt-2 text-[11px] text-emerald-300/80">{t('studio.addedToCart')}</p>
-      )}
+      <p className="mt-2 text-[11px] leading-relaxed text-white/40">{t('studio.quoteOnlyNote')}</p>
 
       <button className={`${btn} mt-2`} disabled={!count || status === 'saving'} onClick={save}>
         {status === 'saving'

@@ -16,7 +16,7 @@ export function translate(locale, key, vars, fallback) {
 export const TRANSLATIONS = {
   de: {
     studio: {
-      title: 'Schilder-Designer',
+      title: 'Schilder-Designer', navLink: 'Designer',
       subtitle: 'Elemente hinzufügen, frei platzieren und in Zentimetern maßgenau einstellen.',
       add: 'Hinzufügen',
       addText: 'Schriftzug', addRect: 'Rechteck', addCircle: 'Kreis', addStar: 'Stern',
@@ -56,9 +56,7 @@ export const TRANSLATIONS = {
       save: 'Entwurf speichern', saveUpdate: 'Entwurf aktualisieren', saving: 'Wird gespeichert…',
       saved: 'Gespeichert ✓ — der Link in der Adresszeile öffnet diesen Entwurf in diesem Browser wieder.',
       saveError: 'Entwurf konnte nicht gespeichert werden.',
-      addToCart: 'In den Warenkorb', addedToCart: 'Zum Warenkorb hinzugefügt ✓',
-      cartItemName: 'Schilder-Designer Entwurf',
-      quoteOnlyNote: 'Ab 50 cm Höhe ist keine Online-Bestellung möglich — wir erstellen Ihnen ein individuelles Angebot.',
+      quoteOnlyNote: 'Entwürfe aus dem Designer bestellen wir nicht online — Schildfläche, Montage und Sonderformen kalkulieren wir im persönlichen Angebot.',
       requestQuote: 'Angebot anfordern', quoteTitle: 'Angebot anfordern',
       quoteIntro: 'Wir prüfen Ihren Entwurf und melden uns mit einem verbindlichen Angebot — inklusive Schildfläche und Montage.',
       quoteSent: 'Vielen Dank! Ihre Anfrage ist bei uns eingegangen — wir melden uns kurzfristig.',
@@ -583,7 +581,7 @@ export const TRANSLATIONS = {
 
   tr: {
     studio: {
-      title: 'Tabela Tasarım Stüdyosu',
+      title: 'Tabela Tasarım Stüdyosu', navLink: 'Tasarım Stüdyosu',
       subtitle: 'Öğeleri ekleyin, serbestçe yerleştirin ve santimetre hassasiyetiyle ayarlayın.',
       add: 'Ekle',
       addText: 'Yazı', addRect: 'Dikdörtgen', addCircle: 'Daire', addStar: 'Yıldız',
@@ -623,9 +621,7 @@ export const TRANSLATIONS = {
       save: 'Tasarımı kaydet', saveUpdate: 'Tasarımı güncelle', saving: 'Kaydediliyor…',
       saved: 'Kaydedildi ✓ — adres çubuğundaki bağlantı bu tasarımı bu tarayıcıda yeniden açar.',
       saveError: 'Tasarım kaydedilemedi.',
-      addToCart: 'Sepete ekle', addedToCart: 'Sepete eklendi ✓',
-      cartItemName: 'Tasarım stüdyosu çalışması',
-      quoteOnlyNote: '50 cm üzeri yükseklikte online sipariş yok — size özel teklif hazırlıyoruz.',
+      quoteOnlyNote: 'Stüdyo tasarımları online sipariş edilmez — zemin, montaj ve özel formlar kişisel teklifte kalküle edilir.',
       requestQuote: 'Teklif iste', quoteTitle: 'Teklif iste',
       quoteIntro: 'Tasarımınızı inceleyip zemin ve montaj dahil bağlayıcı teklifle size dönüyoruz.',
       quoteSent: 'Teşekkürler! Talebiniz bize ulaştı — kısa sürede dönüş yapacağız.',
@@ -1151,7 +1147,7 @@ export const TRANSLATIONS = {
 
   en: {
     studio: {
-      title: 'Sign Designer',
+      title: 'Sign Designer', navLink: 'Designer',
       subtitle: 'Add elements, place them freely and set exact dimensions in centimetres.',
       add: 'Add',
       addText: 'Lettering', addRect: 'Rectangle', addCircle: 'Circle', addStar: 'Star',
@@ -1191,9 +1187,7 @@ export const TRANSLATIONS = {
       save: 'Save design', saveUpdate: 'Update design', saving: 'Saving…',
       saved: 'Saved ✓ — the link in the address bar reopens this design in this browser.',
       saveError: 'The design could not be saved.',
-      addToCart: 'Add to cart', addedToCart: 'Added to cart ✓',
-      cartItemName: 'Sign Designer draft',
-      quoteOnlyNote: 'Above 50 cm height online ordering is not available — we prepare an individual quote for you.',
+      quoteOnlyNote: 'Designer drafts are not ordered online — panel area, installation and special shapes are calculated in a personal quote.',
       requestQuote: 'Request a quote', quoteTitle: 'Request a quote',
       quoteIntro: 'We review your design and come back with a binding quote — including panel area and installation.',
       quoteSent: 'Thank you! We have received your request and will get back to you shortly.',

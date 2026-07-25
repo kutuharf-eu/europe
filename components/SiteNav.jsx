@@ -54,6 +54,7 @@ export default function SiteNav() {
 
   const links = [
     { href: '/', label: t('nav.konfigurator') },
+    { href: '/studio', label: t('studio.navLink', null, 'Designer') },
     { href: '/kontakt', label: t('contact.kicker', null, 'Kontakt') },
   ];
 
