@@ -102,6 +102,15 @@ export default function AdminFiyatClient() {
   const [msg, setMsg] = useState('');
   const [ok, setOk] = useState(false);
 
+  // Örnek ürün TEK yerde tanımlanır (25 Tem 2026, Murat: "bir de extra seçim olmasına
+  // gerek yok"). Hem marj/fiyat önizlemesi hem metraj tablosu bu girdiyi kullanır —
+  // iki ayrı yazı/font/boy kutusu yoktu, artık aynı örnek her iki tabloyu birden besler.
+  const [sample, setSample] = useState({
+    text: 'DÖNER', heightCm: 50, lit: 'beleuchtet',
+    lightDir: 'rueck', sideMaterial: 'aluminium', unbelMaterial: 'plexi',
+    fontId: 'anton',
+  });
+
   const load = async (k) => {
     setBusy(true); setMsg('');
     try {
@@ -179,7 +188,9 @@ export default function AdminFiyatClient() {
         </div>
       )}
 
-      <MarginPreviewSection marj={vars.marj} onMarjChange={(v) => setVar('marj', v)} adminKey={key} />
+      <MarginPreviewSection
+        marj={vars.marj} onMarjChange={(v) => setVar('marj', v)} adminKey={key}
+        f={sample} onSampleChange={(patch) => setSample((s) => ({ ...s, ...patch }))} />
 
       {VAR_GROUPS.map((g) => (
         <section key={g.g} className="flex flex-col gap-2">
@@ -207,29 +218,30 @@ export default function AdminFiyatClient() {
       <ExtrasSection extras={extras} onSave={(rows) => save(rows)} busy={busy} />
       <p className="text-[12px] text-textmut m-0">{t('admin.extrasNote')}</p>
 
-      <MetrajSection />
+      <MetrajSection text={sample.text} heightCm={sample.heightCm} fontId={sample.fontId} />
     </main>
   );
 }
 
 // ── Harf Bazlı Metraj — Katsayı Tablosu ───────────────────────────────────────
-const COEFF_FONTS = [
-  { id: 'anton', labelKey: 'refFontAnton' },
-  { id: 'archivo', labelKey: 'refFontArchivo' },
-  { id: 'oswald', labelKey: 'refFontOswald' },
-];
-
-function MetrajSection() {
+// Kendi girdisi YOKTUR: yukarıdaki örnek ürün (yazı · font · yükseklik) neyse onu
+// gösterir. Font artık 3 referansla sınırlı değil — katsayılar tüm konfigüratör
+// fontları için üretiliyor (npm run coeff:all); dosyası olmayan fontta archivo'ya düşer.
+function MetrajSection({ text, heightCm, fontId }) {
   const t = useT();
-  const [text, setText] = useState('DÖNER');
-  const [hCm, setHCm] = useState(50);
-  const [font, setFont] = useState('anton');
+  const hCm = heightCm;
+  const font = fontId;
   const [coeffs, setCoeffs] = useState(null);
 
   useEffect(() => {
     let live = true;
-    fetch(`/coefficients/${font}.json`)
-      .then((r) => r.json())
+    const get = async (id) => {
+      const r = await fetch(`/coefficients/${id}.json`);
+      if (!r.ok) throw new Error('katsayı dosyası yok');
+      return r.json();
+    };
+    get(font)
+      .catch(() => get('archivo'))
       .then((d) => { if (live) setCoeffs(d); })
       .catch(() => { if (live) setCoeffs(null); });
     return () => { live = false; };
@@ -276,16 +288,10 @@ function MetrajSection() {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-[15px] font-extrabold m-0 border-b border-linegray pb-1.5">{t('admin.metrajTitle')}</h2>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('admin.metrajText')}
-          <input className={inputCls + ' w-[220px]'} value={text} onChange={(e) => setText(e.target.value)} /></label>
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('admin.metrajHeight')}
-          <input type="number" min={1} className={inputCls + ' w-[110px]'} value={hCm} onChange={(e) => setHCm(e.target.value)} /></label>
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('admin.metrajFont')}
-          <select className={inputCls + ' w-[210px]'} value={font} onChange={(e) => setFont(e.target.value)}>
-            {COEFF_FONTS.map((f) => <option key={f.id} value={f.id}>{t('admin.' + f.labelKey)}</option>)}
-          </select></label>
-      </div>
+      {/* Girdi kutusu yok — yukarıdaki örnek ürünü izler. */}
+      <p className="m-0 text-[12px] text-textmut">
+        {t('admin.metrajFollows')} <strong className="text-charcoal">„{text}“ · {KONFIG_FONTS.find((x) => x.id === font)?.label || font} · {hCm} cm</strong>
+      </p>
       {missing.length > 0 && (
         <p className="m-0 text-[12px] text-warnred">{t('admin.metrajMissing')} {[...new Set(missing)].join(' ')}</p>
       )}
@@ -417,22 +423,18 @@ const eurFmt = (n) => (typeof n === 'number' ? n.toLocaleString('de-DE', { style
 const tryFmt = (n) => (typeof n === 'number' ? Math.round(n).toLocaleString('de-DE') + ' ₺' : '—');
 const REASON_KEY = { invalid: 'reasonInvalid', no_kur: 'reasonNoKur', legacy: 'reasonLegacy' };
 
-function MarginPreviewSection({ marj, onMarjChange, adminKey }) {
+// Örnek konfigürasyon (f) ARTIK ÜST BİLEŞENDE tutulur — metraj tablosu da aynı
+// girdiyi kullanıyor. Işıklı: ışık yönü + kenar malzemesi · Işıksız: malzeme (UNBEL_MAT).
+// Montaj seçimi yok: Profi-Montage yalnız "Teklif İste" (fiyatlanmaz), örnek hep 'selbst'.
+function MarginPreviewSection({ marj, onMarjChange, adminKey, f, onSampleChange }) {
   const t = useT();
   const m = marj && typeof marj === 'object' ? marj : {};
   const setTier = (id, v) => onMarjChange({ ...m, [id]: v === '' ? null : Number(v) });
 
-  // Örnek konfigürasyon — Işıklı: ışık yönü + kenar malzemesi · Işıksız: malzeme (UNBEL_MAT).
-  // Montaj seçimi yok: Profi-Montage yalnız "Teklif İste" (fiyatlanmaz), örnek hep 'selbst'.
-  const [f, setF] = useState({
-    text: 'DÖNER', heightCm: 50, lit: 'beleuchtet',
-    lightDir: 'rueck', sideMaterial: 'aluminium', unbelMaterial: 'plexi',
-    fontId: 'anton',
-  });
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const upd = (patch) => { setF((s) => ({ ...s, ...patch })); setRes(null); };
+  const upd = (patch) => { onSampleChange(patch); setRes(null); };
 
   const run = async () => {
     setBusy(true); setErr('');
