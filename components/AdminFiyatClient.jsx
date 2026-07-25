@@ -475,6 +475,10 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey }) {
   // (kaydedilmemiş girişler de anında yansır).
   const costEUR = res?.ok ? res.cost.orderEUR : null;
   const materialEUR = res?.ok ? (res.cost.materialEUR ?? null) : null;
+  // Harf başı salt malzeme — kutunun içinde gösterilir (toplam altındaki satırda).
+  const materialPerLetter = materialEUR != null && res?.letters > 0
+    ? Math.round((materialEUR / res.letters) * 100) / 100
+    : null;
   const tierPrice = (tier) => {
     if (tier.material) return materialEUR;      // salt malzeme — marjdan bağımsız
     if (costEUR == null) return null;
@@ -503,9 +507,13 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey }) {
                 <label className={`flex flex-col gap-1 border px-3 py-2 bg-white flex-1 ${tier.id === 'standart' ? 'border-accent' : 'border-inputline'}`}>
                   <span className="text-[12px] font-bold">{t('admin.' + tier.labelKey)} {tier.id === 'standart' && <span className="text-accent">{t('admin.active')}</span>}</span>
                   {tier.material ? (
-                    /* Salt malzeme: çarpanı yok — değer kutunun altındaki fiyat satırında. */
+                    /* Salt malzeme: çarpanı yok — kutunun içinde harf başı, altındaki
+                       satırda toplam. Diğer kutularda çarpanın durduğu yer boş kalmasın. */
                     <span className="flex items-center gap-1.5">
-                      <span className="text-[15px] font-bold w-[90px] inline-block py-1.5 text-textmut">—</span>
+                      <span className="text-[15px] font-bold py-1.5 tabular-nums">
+                        {materialPerLetter == null ? '—' : eurFmt(materialPerLetter)}
+                      </span>
+                      <span className="text-[12px] font-semibold text-textmut">{t('admin.perLetterSuffix')}</span>
                     </span>
                   ) : tier.fixed ? (
                     <span className="flex items-center gap-1.5">
