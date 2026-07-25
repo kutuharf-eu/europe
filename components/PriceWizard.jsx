@@ -321,6 +321,9 @@ export default function PriceWizard({ view: initialView = 'internal' }) {
               <VarRow label="Halo ayağı" value={vars.haloAyak?.amount} currency="TL" onChange={setAmount('haloAyak')} />
               <VarRow label="Yapıştırıcı / harf" value={vars.yapistiriciPerHarf?.amount} currency="TL" onChange={setAmount('yapistiriciPerHarf')} />
               <VarRow label="Kablo / harf" value={vars.kabloPerHarf?.amount} currency="TL" onChange={setAmount('kabloPerHarf')} />
+              <VarRow label="Montaj gideri / harf" value={vars.montajGiderPerHarf?.amount} currency="TL" onChange={setAmount('montajGiderPerHarf')} />
+              <VarRow label="Montaj taban (logo/çubuk)" value={vars.formMontajTaban?.amount} currency="TL" onChange={setAmount('formMontajTaban')} />
+              <VarRow label="Montaj / LED (logo/çubuk)" value={vars.formMontajPerLed?.amount} currency="TL" onChange={setAmount('formMontajPerLed')} />
               <VarRow label="Krom boyama ≤50" value={vars.kromBoyamaKucuk?.amount} currency="TL" onChange={setAmount('kromBoyamaKucuk')} />
               <VarRow label="Krom boyama >50" value={vars.kromBoyamaBuyuk?.amount} currency="TL" onChange={setAmount('kromBoyamaBuyuk')} missing={!vars.kromBoyamaBuyuk} />
             </div>

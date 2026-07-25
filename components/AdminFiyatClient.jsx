@@ -26,6 +26,7 @@ const VAR_GROUPS = [
   ] },
   { g: 'grpConsum', keys: [
     ['vida', 'vVida', 'price'], ['vidaKurali', 'vVidaKural', 'json'], ['haloAyak', 'vHaloAyak', 'price'], ['yapistiriciPerHarf', 'vYapistirici', 'price'],
+    ['montajGiderPerHarf', 'vMontajGider', 'price'], ['formMontajTaban', 'vFormMontajTaban', 'price'], ['formMontajPerLed', 'vFormMontajLed', 'price'],
   ] },
   { g: 'grpPaint', keys: [['kromBoyamaKucuk', 'vKromBoyamaK', 'price'], ['kromBoyamaBuyuk', 'vKromBoyamaB', 'price']] },
   { g: 'grpMontage', keys: [['montajSablonFiyat', 'vMontajSablon', 'price']] },
