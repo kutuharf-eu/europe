@@ -3,6 +3,7 @@
 // (sessionStorage 'kh-admin-key' + x-admin-key başlığı). Bekleyen başvuruları
 // onayla (kademe ata: çok/az) / reddet; onaylı Händler'in kademesini değiştir.
 import { useState, useEffect } from 'react';
+import PasswordInput from '@/components/PasswordInput';
 
 const inputCls = 'p-3 text-base border border-inputline bg-white text-charcoal w-full';
 
@@ -60,7 +61,8 @@ export default function AdminHaendlerClient() {
     return (
       <main className="max-w-md mx-auto px-4 py-16 flex flex-col gap-4">
         <h1 className="text-xl font-extrabold m-0">Händler Yönetimi — Giriş</h1>
-        <input type="password" className={inputCls} placeholder="Admin anahtarı" value={key}
+        <PasswordInput className={inputCls} placeholder="Admin anahtarı" value={key}
+          showLabel="Anahtarı göster" hideLabel="Anahtarı gizle"
           onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && load(key)} />
         <button onClick={() => load(key)} disabled={busy || !key}
           className="bg-accent text-white font-semibold px-5 py-2.5 cursor-pointer disabled:opacity-40">Giriş</button>

@@ -274,6 +274,7 @@ export const TRANSLATIONS = {
       registerIntro: 'Kostenloses Kundenkonto für Gastronomen und Geschäftskunden. Sie sind Wiederverkäufer? Nach der Registrierung können Sie in Ihrem Konto den Händlerstatus beantragen — nach unserer Freischaltung sehen Sie Ihre Sonderkonditionen.',
       passwordMin: 'Passwort (min. 6 Zeichen)', createAccount: 'Konto erstellen', creating: 'Wird erstellt…',
       alreadyReg: 'Bereits registriert?', emailTaken: 'Diese E-Mail ist bereits registriert.', regFailed: 'Registrierung fehlgeschlagen: ',
+      showPw: 'Passwort anzeigen', hidePw: 'Passwort verbergen',
     },
     haendlerReg: {
       title: 'Händler werden', subtitle: 'Registrieren Sie sich mit Ihren Firmendaten. Nach Prüfung wird Ihr Konto freigeschaltet.',
@@ -850,6 +851,7 @@ export const TRANSLATIONS = {
       registerIntro: 'Gastronomi ve kurumsal müşteriler için ücretsiz hesap. Bayi misiniz? Kayıttan sonra hesabınızdan bayi statüsü başvurusu yapabilirsiniz — onayımızdan sonra özel koşullarınızı görürsünüz.',
       passwordMin: 'Şifre (min. 6 karakter)', createAccount: 'Hesap oluştur', creating: 'Oluşturuluyor…',
       alreadyReg: 'Zaten kayıtlı mısınız?', emailTaken: 'Bu e-posta zaten kayıtlı.', regFailed: 'Kayıt başarısız: ',
+      showPw: 'Şifreyi göster', hidePw: 'Şifreyi gizle',
     },
     haendlerReg: {
       title: 'Bayi ol', subtitle: 'Firma bilgilerinizle kayıt olun. İncelemeden sonra hesabınız aktifleştirilir.',
@@ -1429,6 +1431,7 @@ export const TRANSLATIONS = {
       registerIntro: 'Free customer account for restaurants and business customers. Are you a reseller? After registering you can apply for reseller status in your account — after our approval you’ll see your special conditions.',
       passwordMin: 'Password (min. 6 characters)', createAccount: 'Create account', creating: 'Creating…',
       alreadyReg: 'Already registered?', emailTaken: 'This email is already registered.', regFailed: 'Registration failed: ',
+      showPw: 'Show password', hidePw: 'Hide password',
     },
     haendlerReg: {
       title: 'Become a reseller', subtitle: 'Register with your company details. Your account will be activated after review.',

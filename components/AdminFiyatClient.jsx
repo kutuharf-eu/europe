@@ -6,6 +6,7 @@
 // Tüm metinler i18n (useT · admin.* / konfig3.*) — panel DE/TR/EN, kombinasyon etiketleri
 // müşteri konfigüratörüyle BİREBİR aynı (aynı çeviri anahtarları + buildCfg türetimi).
 import { useEffect, useState } from 'react';
+import PasswordInput from '@/components/PasswordInput';
 import { useT, useLocale } from '@/components/LocaleProvider';
 import { LOCALES, LOCALE_LABELS } from '@/data/i18n';
 import { KONFIG_FONTS } from '@/data/konfigurator';
@@ -160,7 +161,8 @@ export default function AdminFiyatClient() {
           <h1 className="text-xl font-extrabold m-0">{t('admin.loginTitle')}</h1>
           <LangSwitch />
         </div>
-        <input type="password" className={inputCls} placeholder={t('admin.keyPlaceholder')} value={key} onChange={(e) => setKey(e.target.value)}
+        <PasswordInput className={inputCls} placeholder={t('admin.keyPlaceholder')} value={key} onChange={(e) => setKey(e.target.value)}
+          showLabel={t('auth.showPw')} hideLabel={t('auth.hidePw')}
           onKeyDown={(e) => e.key === 'Enter' && load(key)} />
         <button onClick={() => load(key)} disabled={busy || !key} className="bg-accent text-white font-semibold px-5 py-2.5 cursor-pointer disabled:opacity-40">{t('admin.loginBtn')}</button>
         {msg && <p className="text-warnred text-[13px] m-0">{msg}</p>}

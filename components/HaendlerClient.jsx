@@ -4,6 +4,7 @@
 // Status 'pending'). Anmeldung via Supabase Auth direkt. Nach Freigabe durch den
 // Admin sieht der Händler im Konfigurator automatisch seine Händlerpreise.
 import { useState, useEffect } from 'react';
+import PasswordInput from '@/components/PasswordInput';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import { useT } from '@/components/LocaleProvider';
@@ -79,7 +80,8 @@ function LoginForm() {
         <input type="email" required className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
       </label>
       <label className={labelCls}>{t('auth.password')}
-        <input type="password" required className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        <PasswordInput required className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password"
+          showLabel={t('auth.showPw')} hideLabel={t('auth.hidePw')} />
       </label>
       {err && <p className="text-sm text-red-600">{err}</p>}
       <button type="submit" disabled={busy} className={btnCls}>{busy ? t('auth.signingIn') : t('auth.signIn')}</button>
@@ -135,7 +137,8 @@ function RegisterForm({ onDone }) {
         <input type="email" required className={inputCls} value={f.email} onChange={set('email')} autoComplete="email" />
       </label>
       <label className={labelCls}>{t('account.regPw')}
-        <input type="password" required minLength={8} className={inputCls} value={f.password} onChange={set('password')} autoComplete="new-password" />
+        <PasswordInput required minLength={8} className={inputCls} value={f.password} onChange={set('password')} autoComplete="new-password"
+          showLabel={t('auth.showPw')} hideLabel={t('auth.hidePw')} />
       </label>
       {err && <p className="text-sm text-red-600">{err}</p>}
       <button type="submit" disabled={busy} className={btnCls}>{busy ? t('account.regSending') : t('account.regSubmit')}</button>

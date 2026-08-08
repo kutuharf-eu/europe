@@ -2,6 +2,7 @@
 // KUTUHARF — Admin: stüdyo teklif talepleri. AdminHaendlerClient ile aynı giriş
 // deseni (sessionStorage 'kh-admin-key' + x-admin-key başlığı).
 import { useState, useEffect } from 'react';
+import PasswordInput from '@/components/PasswordInput';
 
 const inputCls = 'p-3 text-base border border-inputline bg-white text-charcoal w-full';
 
@@ -67,10 +68,11 @@ export default function AdminStudioQuotesClient() {
       <div className="min-h-screen bg-sectionlight p-6">
         <div className="mx-auto max-w-sm bg-white p-6 shadow">
           <h1 className="mb-4 text-xl font-bold text-charcoal">Stüdyo Teklifleri — Giriş</h1>
-          <input
+          <PasswordInput
             className={inputCls}
-            type="password"
             placeholder="Admin anahtarı"
+            showLabel="Anahtarı göster"
+            hideLabel="Anahtarı gizle"
             value={key}
             onChange={(e) => setKey(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load(key)}
