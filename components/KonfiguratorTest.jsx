@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Type, Ruler, Sun, Lightbulb, Sparkles, Layers, Square, ShoppingBag,
-  MessageSquare, FileText, RotateCcw, Check, Info, Image as ImageIcon, ZoomIn, X, Upload, ChevronDown,
+  MessageSquare, FileText, RotateCcw, Check, Info, Image as ImageIcon, ZoomIn, X, Upload, ChevronDown, Plus,
 } from 'lucide-react';
 import {
   Archivo_Black, Playfair_Display, Oswald, Baloo_2,
@@ -148,6 +148,11 @@ const FONT_PDF = {
 const CUSTOM_FONT_FAMILY = 'KutuharfCustom';
 
 const DIR_ICON = { rueck: Lightbulb, front: Sun, front_seite: Layers, seite: Sparkles };
+
+// Bir siparişte en fazla kaç yazı bloğu olabilir. Sınır teknik değil, arayüz
+// içindir: daha fazlası tek sayfada okunamaz hale geliyor. Daha büyük projeler
+// zaten "Proje talebi" akışına yönlendiriliyor.
+const MAX_BLOK = 6;
 
 const DEFAULTS = {
   text: 'IHR SCHRIFTZUG', fontId: 'modern', customFontName: '',
@@ -490,7 +495,38 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   const removeItem = useCartStore((s) => s.removeItem); // sonuç bölümündeki ürün kutusundan kaldırma
   const cartHaendlerMode = useCartStore((s) => s.haendlerMode); // sepetin fiyat bağlamı (Händler/standart)
   const cartClear = useCartStore((s) => s.clear);
-  const [sel, setSel] = useState(DEFAULTS);
+  // ── ÇOK YAZILI PROJE ────────────────────────────────────────────────────────
+  // Sipariş bir veya daha çok YAZI BLOĞU içerir. Her blok kendi yazı karakteri,
+  // harf yüksekliği, tabela tipi ve ışık yönüyle AYRI fiyatlanır; sepete de ayrı
+  // "Harf" kalemi olarak girer (fiziksel olarak ayrı bir üretim işi).
+  //
+  // 0. blok "ana blok"tur: logo, çubuk LED, montaj ve delme şablonu gibi SİPARİŞ
+  // seviyesindeki seçimler yalnız onda tutulur — bunlar bir kez ücretlenir.
+  // Bu yüzden aşağıdaki sel/set 0. bloğu gösterir ve dosyanın geri kalanı
+  // (logo/montaj/sonuç/sepet bölümleri) hiç değişmeden çalışmaya devam eder.
+  const [bloklar, setBloklar] = useState(() => [{ ...DEFAULTS, __id: 'b0' }]);
+  const sel = bloklar[0];
+  const setSel = (upd) =>
+    setBloklar((bs) => bs.map((b, i) => (i === 0 ? (typeof upd === 'function' ? upd(b) : { ...b, ...upd }) : b)));
+  const blokGuncelle = (i, patch) =>
+    setBloklar((bs) => bs.map((b, j) => (j === i ? { ...b, ...patch } : b)));
+  const blokEkle = () =>
+    setBloklar((bs) => {
+      if (bs.length >= MAX_BLOK) return bs;
+      // Yeni blok bir öncekinin görünüm seçimlerini devralır (aynı tabela ailesi
+      // olması olağan), ama YAZI ve LOGO/ÇUBUK boş başlar: onlar bloğa özgü.
+      const onceki = bs[bs.length - 1];
+      return [...bs, {
+        ...onceki,
+        __id: `b${Date.now().toString(36)}`,
+        text: '',
+        logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoName: '', logoUrl: '', logoUv: false,
+        cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
+        bohrschablone: false,
+      }];
+    });
+  const blokSil = (i) => setBloklar((bs) => (i === 0 ? bs : bs.filter((_, j) => j !== i)));
+
   const [partAdded, setPartAdded] = useState(false); // çok parçalı proje: "sepete eklendi" bildirimi
   const [ctxConflict, setCtxConflict] = useState(null); // karma sepet: bekleyen ekleme fn'i (onay modalı)
   const [hydrated, setHydrated] = useState(false); // mini-sepet SSR/CSR uyumsuzluğunu önlemek için
@@ -498,42 +534,15 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   const [cubukOpen, setCubukOpen] = useState(false); // Çubuk LED bölümü: varsayılan gizli, tıklayınca açılır
   const set = (patch) => setSel((s) => ({ ...s, ...patch }));
 
-  // Font-Kategoriefilter + hochgeladene Kundenschrift
-  const [fontCat, setFontCat] = useState('alle');
-  const [customFont, setCustomFont] = useState(null); // { name, dataUrl, url|null }
-  const [fontBusy, setFontBusy] = useState(false);
-  const [fontErr, setFontErr] = useState(false);
-
-  // Kundenschrift laden: sofort im Browser registrieren (Live-Vorschau) und —
-  // falls Storage konfiguriert — als Bestell-Anhang in den Upload-Bucket legen.
-  const onFontFile = async (file) => {
-    if (!file) return;
-    setFontErr(false);
-    if (file.size > 5 * 1024 * 1024 || !/\.(ttf|otf|woff2?)$/i.test(file.name)) { setFontErr(true); return; }
-    setFontBusy(true);
-    try {
-      const buf = await file.arrayBuffer();
-      const face = new FontFace(CUSTOM_FONT_FAMILY, buf);
-      await face.load();
-      // Alte Kundenschrift ersetzen
-      document.fonts.forEach((f) => { if (f.family === CUSTOM_FONT_FAMILY) document.fonts.delete(f); });
-      document.fonts.add(face);
-      const dataUrl = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result); r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      let url = null;
-      const path = `fonts/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const { error } = await supabase.storage.from('uploads').upload(path, file, { upsert: false });
-      if (!error) url = supabase.storage.from('uploads').getPublicUrl(path).data.publicUrl;
-      setCustomFont({ name: file.name, dataUrl, url });
-      set({ fontId: 'custom', customFontName: file.name });
-    } catch {
-      setFontErr(true);
-    }
-    setFontBusy(false);
-  };
+  // ── Yüklenen müşteri yazı tipleri ───────────────────────────────────────────
+  // Yükleme arayüzü blok içinde (her blok kendi yazı tipini seçebilir) ama durum
+  // BURADA tutulur: sipariş eki (fontFile) ve PDF önizleme ana bloğun yazı tipine
+  // bakıyor. Blok kimliğine göre saklanır ki blok silinince karışmasın.
+  const [customFonts, setCustomFonts] = useState({}); // { [blokId]: { name, dataUrl, url|null } }
+  const customFontFor = (id) => customFonts[id] || null;
+  const setCustomFontFor = (id, cf) => setCustomFonts((m) => ({ ...m, [id]: cf }));
+  // Ana bloğun yazı tipi — sipariş eki ve PDF bunu kullanır (mevcut davranış).
+  const customFont = customFonts[bloklar[0].__id] || null;
 
   // Kundenlogo (optional): Vorschau als Daten-URL (nur Bildformate) und — falls
   // Storage konfiguriert — Upload in den uploads-Bucket. Preis kommt aus den
@@ -716,6 +725,25 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceKey]);
   const price = serverPrice || localPrice;
+
+  // ── EK YAZI BLOKLARININ FİYATI ──────────────────────────────────────────────
+  // 0. blok yukarıdaki `price`tir (sunucuyla rafine edilir). 1..n blokları burada
+  // yerel formülle hesaplanır — her biri kendi harflerini, LED'ini ve trafosunu
+  // taşır, çünkü farklı font/tabela tipi fiziksel olarak AYRI bir üretim işidir.
+  //
+  // SİPARİŞ SEVİYESİ kalemler ek bloklarda bilerek SIFIRLANIR ki iki kez sayılmasın:
+  //   logo · çubuk LED → zaten yalnız 0. blokta girilebiliyor
+  //   montaj           → tek sevkiyat/montaj, 'selbst' = ücretsiz
+  //   delme şablonu    → sipariş başına bir adet
+  const ekBlokFiyatlari = bloklar.slice(1).map((b) => priceForState({
+    ...b,
+    logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false,
+    cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
+    montageId: 'selbst', bohrschablone: false,
+  }));
+  const ekBlokToplam = ekBlokFiyatlari.reduce((a, p) => a + (p?.total || 0), 0);
+  // Özet panelinde ve sepet düğmelerinde gösterilen sipariş toplamı.
+  const genelToplam = (price?.total || 0) + ekBlokToplam;
   const size = estimateSize({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId });
   const assess = sizeAssessment({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId, availWidth: sel.availWidth, availHeight: sel.availHeight });
   const depthRec = recommendDepth(sel.heightCm);
@@ -838,9 +866,33 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   const addHarf = () => guardAdd(() => { if (hasHarfPart && canAdd()) { addItem(buildHarfItem()); setPartAdded(true); } });
   const addLogoPart = () => guardAdd(() => { if (hasLogoPart) { addItem(buildLogoItem()); setPartAdded(true); } });
   const addCubukPart = () => guardAdd(() => { if (hasCubukPart) { addItem(buildCubukItem()); setPartAdded(true); } });
+  // Ek yazı bloğu → sepet kalemi. Sipariş seviyesindeki seçimler (logo, çubuk,
+  // montaj, delme şablonu) burada da sıfırlanır: onlar ana blokta ücretlendi.
+  // Fiyat ekBlokFiyatlari'ndan gelir → panelde gösterilen tutarla BİREBİR aynı.
+  const buildEkBlokItem = (i) => {
+    const s2 = {
+      ...bloklar[i],
+      logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false,
+      cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
+      montageId: 'selbst', bohrschablone: false,
+    };
+    return {
+      categorySlug: 'werbetechnik',
+      productSlug: 'konfigurator-3d-buchstaben',
+      name: t('konfig3.itemName'),
+      detail: detail3(s2),
+      unitPrice: ekBlokFiyatlari[i - 1]?.total || 0,
+      konfig: buildCfg(s2),
+    };
+  };
+
   const addAll = () => {
     if (!canAdd()) return;
     if (hasHarfPart) addItem(buildHarfItem());
+    // Her ek yazı bloğu ayrı bir üretim kalemi olarak sepete girer
+    ekBlokFiyatlari.forEach((p, i) => {
+      if (p && bloklar[i + 1].text.trim()) addItem(buildEkBlokItem(i + 1));
+    });
     if (hasLogoPart) addItem(buildLogoItem());
     if (hasCubukPart) addItem(buildCubukItem());
     setPartAdded(true);
@@ -859,6 +911,12 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
     const inCart = new Set(useCartStore.getState().items.map((i) => i.key));
     const addIfMissing = (build) => { const it = build(); if (!inCart.has(keyOf(it))) addItem(it); };
     if (hasHarfPart && canAdd()) addIfMissing(buildHarfItem);
+    // Ek yazı blokları da sepet dışında kalmasın
+    if (canAdd()) {
+      ekBlokFiyatlari.forEach((p, i) => {
+        if (p && bloklar[i + 1].text.trim()) addIfMissing(() => buildEkBlokItem(i + 1));
+      });
+    }
     if (hasLogoPart) addIfMissing(buildLogoItem);
     if (hasCubukPart) addIfMissing(buildCubukItem);
     router.push('/warenkorb');
@@ -993,354 +1051,34 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
       {/* ── HAUPT-FLOW ── */}
       <div className="flex flex-col gap-9">
 
-        {/* 1. Schriftzug & Font */}
-        <section className="flex flex-col gap-4">
-          <Head n={1} icon={Type}>{t('konfig3.secText')}</Head>
-          <label className="flex flex-col gap-1.5 text-sm font-semibold">{t('konfig3.textLabel', { n: KONFIG_LIMITS.maxTextLen })}
-            <input type="text" maxLength={KONFIG_LIMITS.maxTextLen} value={sel.text} onChange={(e) => set({ text: e.target.value })} placeholder={t('konfig3.textPlaceholder')} className={inputCls + ' text-lg font-bold'} />
-          </label>
-          {/* Çok parçalı proje ipucu (farklı font/yükseklik → her parça ayrı, tek proje) */}
-          <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-accent/5 text-charcoal border border-accent/30">
-            <Info size={15} className="flex-shrink-0 mt-0.5 text-accent" />
-            <span>{t('konfig3.multiPartHint')}</span>
-          </div>
-          <Field label={t('konfig3.fontLabel')}>
-            {/* Kategorie-Chips */}
-            <div className="flex flex-wrap gap-1.5">
-              {KONFIG_FONT_CATS.map((c) => (
-                <button key={c.id} onClick={() => setFontCat(c.id)}
-                  className={`px-3 py-1.5 text-[12px] font-bold border-2 cursor-pointer ${fontCat === c.id ? 'border-accent bg-accent text-white' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
-                  {t(`konfig3.fontCat.${c.id}`)}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-[340px] overflow-y-auto pr-1">
-              {KONFIG_FONTS.filter((f) => !f.custom && (fontCat === 'alle' || f.cat === fontCat)).map((f) => (
-                <button key={f.id} onClick={() => set({ fontId: f.id })}
-                  className={`px-2 py-2.5 border-2 cursor-pointer bg-white flex flex-col items-center gap-1 ${sel.fontId === f.id ? 'border-accent' : 'border-inputline hover:border-accent'}`}>
-                  <span className={`text-xl leading-none text-charcoal ${FONT_CLASS[f.id]}`}>Ag</span>
-                  <span className="text-[10px] text-textmut text-center leading-tight">{oLabel('font', f)}</span>
-                </button>
-              ))}
-            </div>
-            {/* Eigene Schrift hochladen — sofort in Vorschau & Vektorzeichnung aktiv */}
-            <div className="flex flex-col gap-1.5">
-              <label className={`flex items-center justify-center gap-2 px-3 py-3 text-[13px] font-bold border-2 border-dashed cursor-pointer ${sel.fontId === 'custom' ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
-                <Upload size={15} className="text-accent flex-shrink-0" />
-                {fontBusy ? t('konfig3.customFontBusy') : customFont ? `✓ ${customFont.name}` : t('konfig3.customFontBtn')}
-                <input type="file" accept=".ttf,.otf,.woff,.woff2" className="hidden"
-                  onChange={(e) => { onFontFile(e.target.files && e.target.files[0]); e.target.value = ''; }} />
-              </label>
-              {customFont && sel.fontId !== 'custom' && (
-                <button onClick={() => set({ fontId: 'custom', customFontName: customFont.name })} className="text-[12px] font-semibold text-accent underline cursor-pointer bg-transparent border-0 self-start">
-                  {t('konfig3.customFontUse', { name: customFont.name })}
-                </button>
-              )}
-              {fontErr && <span className="text-[12px] text-accent font-semibold">{t('konfig3.customFontErr')}</span>}
-              {customFont && !customFont.url && sel.fontId === 'custom' && (
-                <span className="text-[12px] text-textmut">{t('konfig3.customFontMailHint')}</span>
-              )}
-            </div>
-          </Field>
-          {/* Live-Vorschau — Studio-Wand im Mockup-Look: 3D-Extrusion (Text-Shadow-Stapel),
-              leichte Perspektive, Wand-Vignette und Halo-Lichtfleck in der gewählten
-              LED-Lichtfarbe. Nur Darstellung; State/Preislogik unverändert. */}
-          <div className="relative overflow-hidden flex items-center justify-center min-h-[260px] px-6 py-14 border border-linegray">
-            {/* Wand: oben-mittig angestrahlt, Ränder vignettiert */}
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(165deg,#1c2036 0%,#0e101f 55%,#141733 100%)' }} />
-            <div className="absolute inset-0" style={{ background: 'radial-gradient(70% 85% at 55% 28%, rgba(120,128,205,.22), transparent 68%)' }} />
-            <div className="absolute inset-0" style={{ background: 'radial-gradient(130% 130% at 50% 45%, transparent 52%, rgba(0,0,0,.55) 100%)' }} />
-            {(() => {
-              const lit3 = sel.lit === 'beleuchtet';
-              const glow = lit3 ? (LIGHT_COLORS.find((c) => c.id === sel.lightColor)?.glow || '#ffe6b0') : null;
-              const halo = glow && sel.lightDir === 'rueck';
-              // 3D-Extrusion: gestapelte Text-Shadows nach rechts-unten (Mockup-Blickwinkel)
-              const edge = halo ? '#04050a' : '#0a0c14';
-              const depth = Array.from({ length: 7 }, (_, i) => `${(i + 1) * 1}px ${(i + 1) * 0.8}px 0 ${edge}`).join(',');
-              const light = glow
-                ? (halo
-                  ? `${depth}, 0 0 26px ${glow}, 0 0 70px ${glow}, 0 0 130px ${glow}`
-                  : `${depth}, 0 0 16px ${glow}, 0 0 50px ${glow}`)
-                : `${depth}, 0 10px 24px rgba(0,0,0,.65)`;
-              return (
-                <>
-                  {/* Halo-Lichtfleck an der Wand hinter den Buchstaben */}
-                  {glow && (
-                    <div className="absolute" style={{
-                      inset: '12% 6%',
-                      background: `radial-gradient(60% 55% at 50% 50%, ${glow}${halo ? '55' : '2e'}, transparent 72%)`,
-                      filter: 'blur(6px)',
-                    }} />
-                  )}
-                  <span className={`relative text-center break-words max-w-full font-extrabold uppercase ${FONT_CLASS[sel.fontId] || ''}`}
-                    style={{
-                      fontSize: `clamp(30px, ${Math.max(30, Math.min(84, sel.heightCm * 1.7))}px, 84px)`,
-                      letterSpacing: '0.04em',
-                      lineHeight: 1.05,
-                      color: halo ? '#252833' : (letterColor || '#e8eaef'),
-                      textShadow: light,
-                      transform: 'perspective(1100px) rotateY(-7deg)',
-                      ...(sel.fontId === 'custom' ? { fontFamily: `'${CUSTOM_FONT_FAMILY}', sans-serif` } : {}),
-                    }}>
-                    {sel.text.trim() || t('konfig3.defaultText')}
-                  </span>
-                </>
-              );
-            })()}
-            <span className="absolute bottom-2.5 right-4 text-[11px] text-white/40">{t('konfig3.previewBadge')}</span>
-          </div>
-        </section>
+        {/* ── YAZI BLOKLARI ── her blok kendi yazı karakteri, yüksekliği,
+            tabela tipi ve ışık yönüyle ayrı fiyatlanır; toplam sağdaki özette. */}
+        {bloklar.map((b, i) => (
+          <YaziBloku
+            key={b.__id}
+            sel={b}
+            set={(patch) => blokGuncelle(i, patch)}
+            index={i}
+            adet={bloklar.length}
+            onSil={() => blokSil(i)}
+            t={t}
+            /* Logo sipariş seviyesindedir: yalnız ana bloğun vektör çiziminde
+               görünür, ek bloklarda çizilmez (orada logo girilemiyor da). */
+            logoDims={i === 0 ? logoDims : null}
+            logoFile={i === 0 ? logoFile : null}
+            flushOk={flushOk}
+            setFlushOk={setFlushOk}
+            customFont={customFontFor(b.__id)}
+            setCustomFont={(cf) => setCustomFontFor(b.__id, cf)}
+          />
+        ))}
 
-        {/* 2. Fläche & Buchstabenhöhe */}
-        <section className="flex flex-col gap-4">
-          <Head n={2} icon={Ruler}>{t('konfig3.secArea')}</Head>
-          <div className="flex flex-col gap-3 bg-white border border-linegray px-4 py-4">
-            <span className="flex items-center gap-2.5 text-sm font-bold text-charcoal">
-              <Ruler size={16} className="text-accent flex-shrink-0" />
-              {t('konfig.areaQ')}
-            </span>
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig.areaWidth')}
-                <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.widthPh')} value={sel.availWidth} onChange={(e) => set({ availWidth: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-              <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig.areaHeight')}
-                <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.heightPh')} value={sel.availHeight} onChange={(e) => set({ availHeight: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
-              {maxHeight !== null && maxHeight >= KONFIG_LIMITS.minHeight && (
-                <div className="flex items-center gap-3">
-                  <span className="text-[15px]">{t('konfig.areaMax')} <strong className="text-accent">{maxHeight} cm</strong></span>
-                  <button onClick={() => set({ heightCm: maxHeight })} className="px-4 py-2.5 text-[14px] font-semibold bg-accent text-white border-none cursor-pointer hover:brightness-90">{t('konfig.areaApply')}</button>
-                </div>
-              )}
-            </div>
-            {areaTooSmall && (
-              <span className="text-[13px] text-warnred">{t('konfig.areaTooSmall', { text: sel.text.trim(), min: KONFIG_LIMITS.minHeight })}</span>
-            )}
-            {/* Buchstaben schließen bündig mit der Flächenhöhe ab → Hinweis + Pflicht-Checkbox */}
-            {heightFillsArea && (
-              <div className="flex flex-col gap-2.5 px-3.5 py-3 bg-[#fdf3e6] border border-[#d9a441]/50">
-                <span className="text-[13px] leading-relaxed text-[#9a6414] flex items-start gap-2">
-                  <Info size={15} className="flex-shrink-0 mt-0.5" />
-                  <span>{t('konfig3.flushWarn')}</span>
-                </span>
-                <label className="flex items-start gap-2.5 cursor-pointer text-[13px] font-semibold text-charcoal">
-                  <input type="checkbox" checked={flushOk} onChange={(e) => setFlushOk(e.target.checked)} className="w-4 h-4 accent-accent mt-0.5 flex-shrink-0" />
-                  <span>{t('konfig3.flushCheck')} *</span>
-                </label>
-              </div>
-            )}
-            <span className="text-[12px] text-textmut">{t('konfig.areaNote', { font: t(`konfig.font_${sel.fontId}`, {}, sel.fontId), max: KONFIG_LIMITS.maxHeight })}</span>
-          </div>
-          <Field label={<>{t('konfig3.letterHeight')}: <strong className={letterOversize || areaTooSmall ? 'text-warnred' : 'text-accent'}>{sel.heightCm} cm</strong></>}>
-            {/* Harte Obergrenze: bei eingegebener Fläche kann der Regler das Flächen-Maximum
-                (Breite UND Höhe) nie überschreiten — nicht nur warnen. */}
-            <input type="range" min={KONFIG_LIMITS.minHeight} max={sliderMax} step={5} value={sel.heightCm} onChange={(e) => set({ heightCm: Math.min(Number(e.target.value), sliderMax) })} className={`w-full ${letterOversize || areaTooSmall ? 'accent-warnred' : 'accent-accent'}`} />
-            <span className="flex justify-between text-[11px] text-textmut"><span>{KONFIG_LIMITS.minHeight} cm</span><span>{sliderMax} cm</span></span>
-            {/* Direkteingabe (cm): freie Zwischenwerte (der Regler springt in 5er-Schritten).
-                Beim Tippen nur nach oben klemmen, Untergrenze erst beim Verlassen des Felds. */}
-            <div className="flex items-center gap-2 mt-1">
-              <input type="number" min={KONFIG_LIMITS.minHeight} max={sliderMax} inputMode="numeric" value={sel.heightCm}
-                onChange={(e) => { const v = e.target.value; if (v === '') return; set({ heightCm: Math.min(Math.round(Number(v)) || 0, sliderMax) }); }}
-                onBlur={() => set({ heightCm: Math.max(KONFIG_LIMITS.minHeight, Math.min(Number(sel.heightCm) || KONFIG_LIMITS.minHeight, sliderMax)) })}
-                className={inputCls + ' w-[110px] text-[15px] font-bold'} />
-              <span className="text-[13px] text-textsec">cm</span>
-            </div>
-          </Field>
-          {letterOversize && (
-            <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdeceb] text-warnred border border-warnred/40">
-              <Info size={15} className="flex-shrink-0 mt-0.5" />
-              <span>{t('konfig3.oversizeWarn', { max: KONFIG_LIMITS.quoteHeight })}</span>
-            </div>
-          )}
-          {/* Untergrenze: Fläche erzwingt Buchstaben < 10 cm → produktionsunmöglich, Warnbox + Warenkorb gesperrt */}
-          {areaTooSmall && (
-            <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdeceb] text-warnred border border-warnred/40">
-              <Info size={15} className="flex-shrink-0 mt-0.5" />
-              <span>{t('konfig3.undersizeWarn', { min: KONFIG_LIMITS.minHeight })}</span>
-            </div>
-          )}
-          <div className={`${box} px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px]`}>
-            <span className="inline-flex items-center gap-2"><Ruler size={15} className="text-accent" /> {t('konfig3.estWidth')}: <strong>{size ? `${size.widthCm} cm` : '—'}</strong></span>
-            {depthRec && <span className="text-textsec">{t('konfig3.recDepth')} <strong className="text-charcoal">{depthRec}</strong></span>}
-          </div>
-          {assess && (
-            <div className={`text-[13px] px-3 py-2.5 flex items-start gap-2 ${assess.status === 'good' ? 'bg-[#eaf6ee] text-[#1c7a45]' : assess.status === 'veryBig' ? 'bg-[#fdf3e6] text-[#9a6414]' : 'bg-[#fdeceb] text-warnred'}`}>
-              <Info size={15} className="flex-shrink-0 mt-0.5" />
-              <span>
-                {assess.status === 'good' && t('konfig3.assessGood')}
-                {assess.status === 'tooBig' && <>{t('konfig3.assessTooBigA')}<strong>{assess.recommendHeight} cm</strong>{t('konfig3.assessTooBigB')}</>}
-                {assess.status === 'areaTooSmall' && t('konfig3.assessAreaTooSmall')}
-                {assess.status === 'veryBig' && t('konfig3.assessVeryBig')}
-                {assess.status === 'tinyLetters' && t('konfig3.assessTiny')}
-              </span>
-            </div>
-          )}
-        </section>
-
-        {/* 3. Vektormaß */}
-        <section className="flex flex-col gap-3">
-          <Head n={3} icon={Ruler}>{t('konfig3.secVector')}</Head>
-          <div className={`${box} px-4 py-5`}>
-            {size ? <VectorMass text={sel.text.trim()} fontClass={FONT_CLASS[sel.fontId] || ''} fontFamily={sel.fontId === 'custom' ? `'${CUSTOM_FONT_FAMILY}', sans-serif` : undefined} widthCm={size.widthCm} heightCm={sel.heightCm} availWidth={sel.availWidth} availHeight={sel.availHeight} frameLabel={t('konfig3.availFrame')} color={letterColor}
-              logo={logoDims ? { ...logoDims, shape: sel.logoShape, href: logoFile?.dataUrl || null, label: t('konfig3.rLogo') } : null}
-              wallColor={sel.wallColor}
-              lightDir={sel.lit === 'beleuchtet' ? sel.lightDir : null}
-              glowColor={sel.lit === 'beleuchtet' && sel.lightDir ? (LIGHT_COLORS.find((c) => c.id === sel.lightColor)?.glow || '#ffe6b0') : null} />
-              : <p className="m-0 text-[13px] text-textmut">{t('konfig3.vectorEmpty')}</p>}
-            {/* Wandfarbe: Kunde kombiniert die Buchstaben mit seiner Fassaden-/Untergrundfarbe */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="text-[12px] font-bold text-textsec mr-1">{t('konfig3.wallColorLabel')}</span>
-              {WALL_COLORS.map((c) => (
-                <button key={c} onClick={() => set({ wallColor: c })} aria-label={c}
-                  className={`w-8 h-8 border-2 cursor-pointer ${sel.wallColor === c ? 'border-accent' : 'border-inputline hover:border-accent'}`}
-                  style={{ background: c }} />
-              ))}
-              <label className={`relative w-8 h-8 border-2 cursor-pointer overflow-hidden ${!WALL_COLORS.includes(sel.wallColor) ? 'border-accent' : 'border-inputline hover:border-accent'}`}
-                title={t('konfig3.wallCustom')}
-                style={{ background: 'conic-gradient(#f66 0 25%, #fd4 0 50%, #4d9 0 75%, #49f 0 100%)' }}>
-                <input type="color" value={sel.wallColor} onChange={(e) => set({ wallColor: e.target.value })}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-              </label>
-            </div>
-            <p className="m-0 text-[11px] text-textmut text-center mt-2">{t('konfig3.vectorNote')}</p>
-          </div>
-        </section>
-
-        {/* 4. Tabellentyp */}
-        <section className="flex flex-col gap-3">
-          <Head n={4} icon={Lightbulb}>{t('konfig3.secType')}</Head>
-          <div className="grid grid-cols-2 gap-3">
-            {TABELLE_TYPES.map((ty) => (
-              <ImgChoice key={ty.id} folder="light" img={ty.img} title={oL('type', ty)} sub={oS('type', ty)} alt={ty.alt} active={sel.lit === ty.id} onClick={() => set({ lit: ty.id })} />
-            ))}
-          </div>
-        </section>
-
-        {/* 5A. Beleuchtet → Lichtrichtung + Optionen */}
-        {lit && (
-          <section className="flex flex-col gap-5">
-            <Head n="4A" icon={Sun}>{t('konfig3.secLightDir')}</Head>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {LIGHT_DIRS.filter((d) => !uvActive || d.id === 'front' || d.id === 'front_seite').map((d) => (
-                <ImgChoice key={d.id} folder="light" img={d.img} title={oL('lightDir', d)} sub={oS('lightDir', d)} alt={d.alt} active={sel.lightDir === d.id} onClick={() => set({ lightDir: d.id })} />
-              ))}
-            </div>
-
-            {/* 4A1 Rückleuchtend */}
-            {sel.lightDir === 'rueck' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <Field label={t('konfig3.fCorpus')}>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {BODY_MAT_RUECK.map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oLabel('bodyMat', m)} alt={m.alt} active={sel.bodyMaterial === m.id} onClick={() => set({ bodyMaterial: m.id })} />)}
-                  </div>
-                </Field>
-                {RUECK_CHROM_IDS.includes(sel.bodyMaterial) && <ChromPicker sel={sel} set={set} />}
-                {RUECK_LACK_IDS.includes(sel.bodyMaterial) && (
-                  <Field label={t('konfig3.fRal')}>
-                    <RalSelect value={sel.ralCode} onChange={(v) => set({ ralCode: v })} />
-                  </Field>
-                )}
-                {RUECK_WAND_AKRYL_IDS.includes(sel.bodyMaterial) && (
-                  <Field label={t('konfig3.fBackPanel')}>
-                    <div className="grid grid-cols-2 gap-2 max-w-[360px]">
-                      {BACK_PANELS.map((b) => <ChoiceBtn key={b.id} active={sel.backPanelSize === b.id} onClick={() => set({ backPanelSize: b.id })} title={b.label} />)}
-                    </div>
-                  </Field>
-                )}
-                <LightColor sel={sel} set={set} />
-                <Field label={t('konfig3.fWandabstand')}>
-                  <div className="grid grid-cols-3 gap-2">{WANDABSTAND.map((w) => <ChoiceBtn key={w.id} active={sel.wandabstand === w.id} onClick={() => set({ wandabstand: w.id })} title={w.label} sub={t(`konfig3.wandabstand.${w.id}`, null, w.desc)} />)}</div>
-                </Field>
-              </div>
-            )}
-
-            {/* 4A2 Frontleuchtend */}
-            {sel.lightDir === 'front' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <AcrylPicker label={t('konfig3.fFaceAcryl')} value={sel.acrylFront} kontakt={sel.acrylFrontKontakt} onPick={(id) => set({ acrylFront: id })} onKontakt={(v) => set({ acrylFrontKontakt: v })} />
-                <Field label={t('konfig3.fSideMaterial')}>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{SIDE_MAT_FRONT.map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oLabel('sideMat', m)} alt={m.alt} active={sel.sideMaterial === m.id} onClick={() => set({ sideMaterial: m.id })} />)}</div>
-                </Field>
-                {CHROM_SIDE_IDS.includes(sel.sideMaterial) ? (
-                  <ChromPicker sel={sel} set={set} />
-                ) : (
-                  <Field label={t('konfig3.fRal')}>
-                    <RalSelect value={sel.ralCode} onChange={(v) => set({ ralCode: v })} />
-                  </Field>
-                )}
-                <LightColor sel={sel} set={set} />
-              </div>
-            )}
-
-            {/* 4A3 Front- und seitenleuchtend */}
-            {sel.lightDir === 'front_seite' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <p className="m-0 text-[15px] font-extrabold text-charcoal">{t('konfig3.titleFrontSeite')}</p>
-                <AcrylPicker label={t('konfig3.fFrontAcrylColor')} value={sel.acrylFront} kontakt={sel.acrylFrontKontakt} onPick={(id) => set({ acrylFront: id })} onKontakt={(v) => set({ acrylFrontKontakt: v })} />
-                <AcrylPicker label={t('konfig3.fSideAcrylColor')} value={sel.acrylSide} kontakt={sel.acrylSideKontakt} onPick={(id) => set({ acrylSide: id })} onKontakt={(v) => set({ acrylSideKontakt: v })} />
-                <LightColor sel={sel} set={set} />
-                <p className="m-0 text-[12px] text-textsec flex items-center gap-1.5"><Info size={13} className="text-accent" /> {t('konfig3.infoFrontSeite')}</p>
-              </div>
-            )}
-
-            {/* 4A4 Seitenleuchtend — Korpus immer Chrom, keine Front-Farbwahl */}
-            {sel.lightDir === 'seite' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <p className="m-0 text-[15px] font-extrabold text-charcoal">{t('konfig3.titleSeite')}</p>
-                <ChromPicker sel={sel} set={set} />
-                <AcrylPicker label={t('konfig3.fSideAcrylLight')} value={sel.acrylSide} kontakt={sel.acrylSideKontakt} onPick={(id) => set({ acrylSide: id })} onKontakt={(v) => set({ acrylSideKontakt: v })} />
-                <LightColor sel={sel} set={set} />
-                <p className="m-0 text-[12px] text-textsec flex items-center gap-1.5"><Info size={13} className="text-accent" /> {t('konfig3.infoSeite')}</p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* 5B. Unbeleuchtet → Material */}
-        {sel.lit === 'unbeleuchtet' && (
-          <section className="flex flex-col gap-5">
-            <Head n="4B" icon={Square}>{t('konfig3.secMaterial')}</Head>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {UNBEL_MAT.filter((m) => !uvActive || m.id === 'plexi').map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oL('unbelMat', m)} sub={oD('unbelMat', m)} alt={m.alt} active={sel.unbelMaterial === m.id} onClick={() => set({ unbelMaterial: m.id })} />)}
-            </div>
-            {sel.unbelMaterial === 'alu_lackiert' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <Field label={t('konfig3.fRal')}><RalSelect value={sel.unbelRal} onChange={(v) => set({ unbelRal: v })} /></Field>
-                <Field label={t('konfig3.fSurface')}><div className="grid grid-cols-2 gap-2 max-w-[360px]">{SURFACES.map((s) => <ChoiceBtn key={s.id} active={sel.surface === s.id} onClick={() => set({ surface: s.id })} title={oL('surface', s)} sub={oD('surface', s)} />)}</div></Field>
-                <Field label={t('konfig3.fDepth')}><div className="grid grid-cols-4 gap-2 max-w-[360px]">{DEPTHS.map((d) => <ChoiceBtn key={d.id} active={sel.depth === d.id} onClick={() => set({ depth: d.id })} title={d.label} />)}</div></Field>
-              </div>
-            )}
-            {sel.unbelMaterial === 'strafor' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <Field label={t('konfig3.fRal')}><RalSelect value={sel.unbelRal} onChange={(v) => set({ unbelRal: v })} /></Field>
-              </div>
-            )}
-            {sel.unbelMaterial === 'edelstahl_chrom' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                {/* Unbeleuchteter Edelstahl/Chrom: keine RAL-Lackierung (noRal) */}
-                <ChromPicker sel={sel} set={set} noRal />
-              </div>
-            )}
-            {sel.unbelMaterial === 'plexi' && (
-              <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
-                <AcrylPicker label={t('konfig3.fAcrylColor')} value={sel.unbelAcryl} kontakt={sel.unbelAcrylKontakt} onPick={(id) => set({ unbelAcryl: id })} onKontakt={(v) => set({ unbelAcrylKontakt: v })} />
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* 5C. UV Baskı (HARF) — ışık/malzeme seçiminden SONRA: frontAcrylic burada kesinleşir,
-            yalnız harfin ön yüzü akrilikse gösterilir. Logo/çubuk UV'si kendi kutularında
-            (harf malzemesinden bağımsız). */}
-        {frontAcrylic && sel.text.trim() && (
-          <section className="flex flex-col gap-3">
-            <Head n="4C" icon={Sparkles}>{t('konfig3.uvBaskiLabel')}</Head>
-            <p className="m-0 text-[13px] text-textmut">{t('konfig3.uvBaskiHint')}</p>
-            <div className="flex flex-col gap-2">
-              <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.uvBaski ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
-                <input type="checkbox" checked={sel.uvBaski === true} onChange={(e) => set({ uvBaski: e.target.checked })} className="w-4 h-4 accent-accent" />
-                <span className="font-semibold text-charcoal">{t('konfig3.uvHarf')}</span>
-              </label>
-            </div>
-          </section>
+        {bloklar.length < MAX_BLOK && (
+          <button onClick={blokEkle}
+            className="flex items-center justify-center gap-2 px-4 py-4 text-[15px] font-bold border-2 border-dashed border-accent text-accent bg-accent/5 hover:bg-accent/10 cursor-pointer">
+            <Plus size={18} className="flex-shrink-0" />
+            {t('konfig3.blokEkle', { n: bloklar.length + 1 }, `Weitere Schriftart wählen (${bloklar.length + 1}.)`)}
+          </button>
         )}
 
         {/* 5. Logo (optional) — Datei + Wunschmaß, fließt in den Preis ein */}
@@ -1581,8 +1319,23 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
                 <span className="text-[12px] text-textmut">Über 50 cm — unverbindlicher Richtpreis, finales Angebot auf Anfrage.</span>
               </div>
             )}
+            {/* Ek yazı bloklarının dökümü — yalnız çok yazılı projede görünür */}
+            {ekBlokFiyatlari.some(Boolean) && (
+              <div className="flex flex-col gap-1 pt-2 mt-1 border-t border-linegray">
+                <div className="flex justify-between gap-3 text-[13px]">
+                  <span className="text-textsec">{bloklar[0].text.trim() || t('konfig3.blokBaslik', { n: 1 }, 'Schriftzug 1')}</span>
+                  <span className="font-semibold tabular-nums text-charcoal">{fmtEur(price?.total || 0)}</span>
+                </div>
+                {ekBlokFiyatlari.map((p, i) => (p ? (
+                  <div key={bloklar[i + 1].__id} className="flex justify-between gap-3 text-[13px]">
+                    <span className="text-textsec truncate">{bloklar[i + 1].text.trim() || t('konfig3.blokBaslik', { n: i + 2 }, `Schriftzug ${i + 2}`)}</span>
+                    <span className="font-semibold tabular-nums text-charcoal">{fmtEur(p.total)}</span>
+                  </div>
+                ) : null))}
+              </div>
+            )}
             {price ? (
-              <div className="flex justify-between items-baseline font-extrabold text-2xl pt-3 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.totalNet')}</span><span>{fmtEur(price.total)}</span></div>
+              <div className="flex justify-between items-baseline font-extrabold text-2xl pt-3 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.totalNet')}</span><span>{fmtEur(genelToplam)}</span></div>
             ) : (
               <p className="m-0 text-[13px] text-warnred pt-2">{lit ? t('konfig3.choosePromptLit') : t('konfig3.choosePrompt')}</p>
             )}
@@ -1638,8 +1391,15 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
                   {hasCubukPart && (
                     <div className="flex justify-between gap-3"><dt className="text-textsec">{t('konfig3.cubukLedRow')}</dt><dd className="m-0 font-semibold text-right text-charcoal tabular-nums">{fmtEur(cubukPart)}</dd></div>
                   )}
+                  {/* Ek yazı blokları — her yazı kendi satırında, yazının kendisi etiket olur */}
+                  {ekBlokFiyatlari.map((p, i) => (p ? (
+                    <div key={bloklar[i + 1].__id} className="flex justify-between gap-3">
+                      <dt className="text-textsec truncate">{bloklar[i + 1].text.trim() || t('konfig3.blokBaslik', { n: i + 2 }, `Schriftzug ${i + 2}`)}</dt>
+                      <dd className="m-0 font-semibold text-right text-charcoal tabular-nums">{fmtEur(p.total)}</dd>
+                    </div>
+                  ) : null))}
                 </dl>
-                <div className="flex justify-between items-baseline font-extrabold text-xl pt-2.5 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.netto')}</span><span>{fmtEur(price.total)}</span></div>
+                <div className="flex justify-between items-baseline font-extrabold text-xl pt-2.5 mt-1 border-t-2 border-charcoal"><span>{t('konfig3.netto')}</span><span>{fmtEur(genelToplam)}</span></div>
                 <span className="text-[11px] text-textmut">{t('konfig3.plusVat')}</span>
                 {needFlushConfirm && <span className="text-[11px] text-warnred font-semibold">{t('konfig3.flushRequired')}</span>}
                 {configIncomplete && <span className="text-[11px] text-warnred font-semibold">{needRalMissing ? t('konfig3.needRal') : t('konfig3.configIncomplete')}</span>}
@@ -1959,5 +1719,485 @@ function LetterPriceTable({ price, t }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/**
+ * ── TEK YAZI BLOĞU ──────────────────────────────────────────────────────────
+ * Bir blok = bir yazı + KENDİ yazı karakteri, harf yüksekliği, tabela tipi,
+ * ışık yönü ve malzemesi. Her blok BAĞIMSIZ fiyatlanır (priceForState) ve
+ * sepete ayrı bir "Harf" kalemi olarak girer — fiziksel olarak da ayrı bir
+ * üretim işi olduğu için trafo/ambalaj kendi içinde sayılır.
+ *
+ * Logo, çubuk LED, montaj ve sonuç bölümleri BLOĞA AİT DEĞİL: onlar sipariş
+ * seviyesinde bir kez, ana bileşende duruyor. Buraya yalnız vektör çiziminde
+ * göstermek için logoDims/logoFile prop olarak geliyor.
+ *
+ * sel/set bu bloğun dilimini gösterir; set(patch) yalnız bu bloğu günceller.
+ */
+function YaziBloku({ sel, set, index, adet, onSil, t, logoDims, logoFile, flushOk, setFlushOk, customFont, setCustomFont }) {
+  // Yazı tipi süzgeci BLOK BAŞINA ayrı tutulur — ikinci blokta başka bir font
+  // ailesine bakmak birinciyi değiştirmemeli. Yüklenen müşteri yazı tipi ise
+  // prop olarak gelir: sipariş eki ve PDF için ana bileşende saklanıyor.
+  const [fontCat, setFontCat] = useState('alle');
+  const [fontBusy, setFontBusy] = useState(false);
+  const [fontErr, setFontErr] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const [err, setErr] = useState(false);
+
+  // Müşteri yazı tipi: tarayıcıya hemen tanıt (canlı önizleme) ve — depolama
+  // yapılandırılmışsa — sipariş eki olarak uploads kovasına koy.
+  const onFontFile = async (file) => {
+    if (!file) return;
+    setFontErr(false);
+    if (file.size > 5 * 1024 * 1024 || !/\.(ttf|otf|woff2?)$/i.test(file.name)) { setFontErr(true); return; }
+    setFontBusy(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const face = new FontFace(CUSTOM_FONT_FAMILY, buf);
+      await face.load();
+      document.fonts.forEach((f) => { if (f.family === CUSTOM_FONT_FAMILY) document.fonts.delete(f); });
+      document.fonts.add(face);
+      const dataUrl = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result); r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      let url = null;
+      const path = `fonts/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const { error } = await supabase.storage.from('uploads').upload(path, file, { upsert: false });
+      if (!error) url = supabase.storage.from('uploads').getPublicUrl(path).data.publicUrl;
+      setCustomFont({ name: file.name, dataUrl, url });
+      set({ fontId: 'custom', customFontName: file.name });
+    } catch {
+      setFontErr(true);
+    }
+    setFontBusy(false);
+  };
+
+  // Seçenek listeleri için çeviri yardımcıları (yedek = veri listesindeki Almanca etiket)
+  const oLabel = (map, item) => t(`konfig3.${map}.${item.id}`, null, item.label);
+  const oL = (map, item) => t(`konfig3.${map}.${item.id}.l`, null, item.label);
+  const oS = (map, item) => t(`konfig3.${map}.${item.id}.s`, null, item.sub);
+  const oD = (map, item) => t(`konfig3.${map}.${item.id}.d`, null, item.desc);
+
+  const lit = sel.lit === 'beleuchtet';
+
+  // Vektör çizimindeki harf rengi — seçilen akril/krom dalını izler
+  const hexOf = (list, id) => list.find((c) => c.id === id)?.hex;
+  const letterColor = (() => {
+    if (sel.lit === 'beleuchtet') {
+      if (sel.lightDir === 'front' || sel.lightDir === 'front_seite') return hexOf(ACRYL_COLORS, sel.acrylFront);
+      if (sel.lightDir === 'seite') return hexOf(CHROM_COLORS, sel.chromColor);
+      if (sel.lightDir === 'rueck') return RUECK_CHROM_IDS.includes(sel.bodyMaterial) ? hexOf(CHROM_COLORS, sel.chromColor) : undefined;
+    } else if (sel.lit === 'unbeleuchtet') {
+      if (sel.unbelMaterial === 'plexi') return hexOf(ACRYL_COLORS, sel.unbelAcryl);
+      if (sel.unbelMaterial === 'edelstahl_chrom') return hexOf(CHROM_COLORS, sel.chromColor);
+    }
+    return undefined;
+  })();
+
+  // Önden akrilik mi? UV baskı yalnız bunlarda sunulur.
+  const frontAcrylic = sel.lit === 'unbeleuchtet'
+    ? sel.unbelMaterial === 'plexi'
+    : sel.lit === 'beleuchtet' && (sel.lightDir === 'front' || sel.lightDir === 'front_seite');
+  const uvActive = sel.uvBaski;
+  // Harf önden akrilik değilse UV geçersiz → kapat. sel.uvBaski koşulu şart:
+  // set her render'da yeni bir fonksiyon, koşulsuz çağrı sonsuz döngü olurdu.
+  useEffect(() => {
+    if (!frontAcrylic && sel.uvBaski) set({ uvBaski: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frontAcrylic, sel.uvBaski]);
+
+  const size = estimateSize({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId });
+  const assess = sizeAssessment({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId, availWidth: sel.availWidth, availHeight: sel.availHeight });
+  const depthRec = recommendDepth(sel.heightCm);
+  const maxHeight = maxLetterHeight({ text: sel.text, widthCm: sel.availWidth, heightCm: sel.availHeight, fontId: sel.fontId });
+  const hasArea = sel.availWidth !== '' || sel.availHeight !== '';
+  const areaTooSmall = hasArea && maxHeight !== null && maxHeight < KONFIG_LIMITS.minHeight;
+  const sliderMax = maxHeight !== null ? Math.max(KONFIG_LIMITS.minHeight, Math.min(maxHeight, KONFIG_LIMITS.maxHeight)) : KONFIG_LIMITS.maxHeight;
+  // Teklif sınırını aşan harf yüksekliği (uyarı rengi için)
+  const letterOversize = sel.heightCm > KONFIG_LIMITS.quoteHeight;
+  // Harf yüksekliği girilen alan yüksekliğini tam dolduruyor (boşluk kalmıyor) →
+  // montaj uyarısı + sepetten önce zorunlu onay. Onay sipariş seviyesindedir,
+  // o yüzden flushOk/setFlushOk prop olarak geliyor.
+  const availHNum = Number(sel.availHeight) || 0;
+  const heightFillsArea = availHNum > 0 && !areaTooSmall && sel.heightCm >= Math.min(Math.floor(availHNum), KONFIG_LIMITS.maxHeight);
+
+  return (
+    <>
+      {/* Blok başlığı — tek blokluk siparişte gösterilmez, kalabalık yapmasın */}
+      {adet > 1 && (
+        <div className="flex items-center justify-between gap-3 border-b-2 border-accent pb-2">
+          <span className="text-[15px] font-black text-accent uppercase tracking-wide">
+            {t('konfig3.blokBaslik', { n: index + 1 }, `Schriftzug ${index + 1}`)}
+          </span>
+          {index > 0 && (
+            <button onClick={onSil}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold text-textmut hover:text-accent cursor-pointer bg-transparent border-0">
+              <X size={14} className="flex-shrink-0" />
+              {t('konfig3.blokSil', null, 'Entfernen')}
+            </button>
+          )}
+        </div>
+      )}
+          {/* 1. Schriftzug & Font */}
+          <section className="flex flex-col gap-4">
+            <Head n={1} icon={Type}>{t('konfig3.secText')}</Head>
+            <label className="flex flex-col gap-1.5 text-sm font-semibold">{t('konfig3.textLabel', { n: KONFIG_LIMITS.maxTextLen })}
+              <input type="text" maxLength={KONFIG_LIMITS.maxTextLen} value={sel.text} onChange={(e) => set({ text: e.target.value })} placeholder={t('konfig3.textPlaceholder')} className={inputCls + ' text-lg font-bold'} />
+            </label>
+            {/* Çok parçalı proje ipucu (farklı font/yükseklik → her parça ayrı, tek proje) */}
+            <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-accent/5 text-charcoal border border-accent/30">
+              <Info size={15} className="flex-shrink-0 mt-0.5 text-accent" />
+              <span>{t('konfig3.multiPartHint')}</span>
+            </div>
+            <Field label={t('konfig3.fontLabel')}>
+              {/* Kategorie-Chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {KONFIG_FONT_CATS.map((c) => (
+                  <button key={c.id} onClick={() => setFontCat(c.id)}
+                    className={`px-3 py-1.5 text-[12px] font-bold border-2 cursor-pointer ${fontCat === c.id ? 'border-accent bg-accent text-white' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
+                    {t(`konfig3.fontCat.${c.id}`)}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-[340px] overflow-y-auto pr-1">
+                {/* Alfabetik sıra (Murat): KONFIG_FONTS kaynak listesi kategoriye göre
+                    dizili, ama müşteri aradığı yazı tipini ada göre arıyor. Sıralama
+                    yalnız GÖRÜNÜMDE — kaynak dizinin sırası fiyat/motor tarafında
+                    kullanılmıyor, `.find(id)` ile erişiliyor. Çeviri varsa ona göre. */}
+                {KONFIG_FONTS
+                  .filter((f) => !f.custom && (fontCat === 'alle' || f.cat === fontCat))
+                  .slice()
+                  .sort((a, b) => oLabel('font', a).localeCompare(oLabel('font', b), undefined, { sensitivity: 'base' }))
+                  .map((f) => (
+                  <button key={f.id} onClick={() => set({ fontId: f.id })}
+                    className={`px-2 py-2.5 border-2 cursor-pointer bg-white flex flex-col items-center gap-1 ${sel.fontId === f.id ? 'border-accent' : 'border-inputline hover:border-accent'}`}>
+                    <span className={`text-xl leading-none text-charcoal ${FONT_CLASS[f.id]}`}>Ag</span>
+                    <span className="text-[10px] text-textmut text-center leading-tight">{oLabel('font', f)}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Eigene Schrift hochladen — sofort in Vorschau & Vektorzeichnung aktiv */}
+              <div className="flex flex-col gap-1.5">
+                <label className={`flex items-center justify-center gap-2 px-3 py-3 text-[13px] font-bold border-2 border-dashed cursor-pointer ${sel.fontId === 'custom' ? 'border-accent bg-accent/5 text-charcoal' : 'border-inputline bg-white text-charcoal hover:border-accent'}`}>
+                  <Upload size={15} className="text-accent flex-shrink-0" />
+                  {fontBusy ? t('konfig3.customFontBusy') : customFont ? `✓ ${customFont.name}` : t('konfig3.customFontBtn')}
+                  <input type="file" accept=".ttf,.otf,.woff,.woff2" className="hidden"
+                    onChange={(e) => { onFontFile(e.target.files && e.target.files[0]); e.target.value = ''; }} />
+                </label>
+                {customFont && sel.fontId !== 'custom' && (
+                  <button onClick={() => set({ fontId: 'custom', customFontName: customFont.name })} className="text-[12px] font-semibold text-accent underline cursor-pointer bg-transparent border-0 self-start">
+                    {t('konfig3.customFontUse', { name: customFont.name })}
+                  </button>
+                )}
+                {fontErr && <span className="text-[12px] text-accent font-semibold">{t('konfig3.customFontErr')}</span>}
+                {customFont && !customFont.url && sel.fontId === 'custom' && (
+                  <span className="text-[12px] text-textmut">{t('konfig3.customFontMailHint')}</span>
+                )}
+              </div>
+            </Field>
+            {/* Live-Vorschau — Studio-Wand im Mockup-Look: 3D-Extrusion (Text-Shadow-Stapel),
+                leichte Perspektive, Wand-Vignette und Halo-Lichtfleck in der gewählten
+                LED-Lichtfarbe. Nur Darstellung; State/Preislogik unverändert. */}
+            <div className="relative overflow-hidden flex items-center justify-center min-h-[260px] px-6 py-14 border border-linegray">
+              {/* Wand: oben-mittig angestrahlt, Ränder vignettiert */}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(165deg,#1c2036 0%,#0e101f 55%,#141733 100%)' }} />
+              <div className="absolute inset-0" style={{ background: 'radial-gradient(70% 85% at 55% 28%, rgba(120,128,205,.22), transparent 68%)' }} />
+              <div className="absolute inset-0" style={{ background: 'radial-gradient(130% 130% at 50% 45%, transparent 52%, rgba(0,0,0,.55) 100%)' }} />
+              {(() => {
+                const lit3 = sel.lit === 'beleuchtet';
+                const glow = lit3 ? (LIGHT_COLORS.find((c) => c.id === sel.lightColor)?.glow || '#ffe6b0') : null;
+                const halo = glow && sel.lightDir === 'rueck';
+                // 3D-Extrusion: gestapelte Text-Shadows nach rechts-unten (Mockup-Blickwinkel)
+                const edge = halo ? '#04050a' : '#0a0c14';
+                const depth = Array.from({ length: 7 }, (_, i) => `${(i + 1) * 1}px ${(i + 1) * 0.8}px 0 ${edge}`).join(',');
+                const light = glow
+                  ? (halo
+                    ? `${depth}, 0 0 26px ${glow}, 0 0 70px ${glow}, 0 0 130px ${glow}`
+                    : `${depth}, 0 0 16px ${glow}, 0 0 50px ${glow}`)
+                  : `${depth}, 0 10px 24px rgba(0,0,0,.65)`;
+                return (
+                  <>
+                    {/* Halo-Lichtfleck an der Wand hinter den Buchstaben */}
+                    {glow && (
+                      <div className="absolute" style={{
+                        inset: '12% 6%',
+                        background: `radial-gradient(60% 55% at 50% 50%, ${glow}${halo ? '55' : '2e'}, transparent 72%)`,
+                        filter: 'blur(6px)',
+                      }} />
+                    )}
+                    <span className={`relative text-center break-words max-w-full font-extrabold uppercase ${FONT_CLASS[sel.fontId] || ''}`}
+                      style={{
+                        fontSize: `clamp(30px, ${Math.max(30, Math.min(84, sel.heightCm * 1.7))}px, 84px)`,
+                        letterSpacing: '0.04em',
+                        lineHeight: 1.05,
+                        color: halo ? '#252833' : (letterColor || '#e8eaef'),
+                        textShadow: light,
+                        transform: 'perspective(1100px) rotateY(-7deg)',
+                        ...(sel.fontId === 'custom' ? { fontFamily: `'${CUSTOM_FONT_FAMILY}', sans-serif` } : {}),
+                      }}>
+                      {sel.text.trim() || t('konfig3.defaultText')}
+                    </span>
+                  </>
+                );
+              })()}
+              <span className="absolute bottom-2.5 right-4 text-[11px] text-white/40">{t('konfig3.previewBadge')}</span>
+            </div>
+          </section>
+
+          {/* 2. Fläche & Buchstabenhöhe */}
+          <section className="flex flex-col gap-4">
+            <Head n={2} icon={Ruler}>{t('konfig3.secArea')}</Head>
+            <div className="flex flex-col gap-3 bg-white border border-linegray px-4 py-4">
+              <span className="flex items-center gap-2.5 text-sm font-bold text-charcoal">
+                <Ruler size={16} className="text-accent flex-shrink-0" />
+                {t('konfig.areaQ')}
+              </span>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig.areaWidth')}
+                  <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.widthPh')} value={sel.availWidth} onChange={(e) => set({ availWidth: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+                <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-textsec">{t('konfig.areaHeight')}
+                  <input type="number" min={1} inputMode="numeric" placeholder={t('konfig3.heightPh')} value={sel.availHeight} onChange={(e) => set({ availHeight: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })} className={inputCls + ' w-[150px]'} /></label>
+                {maxHeight !== null && maxHeight >= KONFIG_LIMITS.minHeight && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-[15px]">{t('konfig.areaMax')} <strong className="text-accent">{maxHeight} cm</strong></span>
+                    <button onClick={() => set({ heightCm: maxHeight })} className="px-4 py-2.5 text-[14px] font-semibold bg-accent text-white border-none cursor-pointer hover:brightness-90">{t('konfig.areaApply')}</button>
+                  </div>
+                )}
+              </div>
+              {areaTooSmall && (
+                <span className="text-[13px] text-warnred">{t('konfig.areaTooSmall', { text: sel.text.trim(), min: KONFIG_LIMITS.minHeight })}</span>
+              )}
+              {/* Buchstaben schließen bündig mit der Flächenhöhe ab → Hinweis + Pflicht-Checkbox */}
+              {heightFillsArea && (
+                <div className="flex flex-col gap-2.5 px-3.5 py-3 bg-[#fdf3e6] border border-[#d9a441]/50">
+                  <span className="text-[13px] leading-relaxed text-[#9a6414] flex items-start gap-2">
+                    <Info size={15} className="flex-shrink-0 mt-0.5" />
+                    <span>{t('konfig3.flushWarn')}</span>
+                  </span>
+                  <label className="flex items-start gap-2.5 cursor-pointer text-[13px] font-semibold text-charcoal">
+                    <input type="checkbox" checked={flushOk} onChange={(e) => setFlushOk(e.target.checked)} className="w-4 h-4 accent-accent mt-0.5 flex-shrink-0" />
+                    <span>{t('konfig3.flushCheck')} *</span>
+                  </label>
+                </div>
+              )}
+              <span className="text-[12px] text-textmut">{t('konfig.areaNote', { font: t(`konfig.font_${sel.fontId}`, {}, sel.fontId), max: KONFIG_LIMITS.maxHeight })}</span>
+            </div>
+            <Field label={<>{t('konfig3.letterHeight')}: <strong className={letterOversize || areaTooSmall ? 'text-warnred' : 'text-accent'}>{sel.heightCm} cm</strong></>}>
+              {/* Harte Obergrenze: bei eingegebener Fläche kann der Regler das Flächen-Maximum
+                  (Breite UND Höhe) nie überschreiten — nicht nur warnen. */}
+              <input type="range" min={KONFIG_LIMITS.minHeight} max={sliderMax} step={5} value={sel.heightCm} onChange={(e) => set({ heightCm: Math.min(Number(e.target.value), sliderMax) })} className={`w-full ${letterOversize || areaTooSmall ? 'accent-warnred' : 'accent-accent'}`} />
+              <span className="flex justify-between text-[11px] text-textmut"><span>{KONFIG_LIMITS.minHeight} cm</span><span>{sliderMax} cm</span></span>
+              {/* Direkteingabe (cm): freie Zwischenwerte (der Regler springt in 5er-Schritten).
+                  Beim Tippen nur nach oben klemmen, Untergrenze erst beim Verlassen des Felds. */}
+              <div className="flex items-center gap-2 mt-1">
+                <input type="number" min={KONFIG_LIMITS.minHeight} max={sliderMax} inputMode="numeric" value={sel.heightCm}
+                  onChange={(e) => { const v = e.target.value; if (v === '') return; set({ heightCm: Math.min(Math.round(Number(v)) || 0, sliderMax) }); }}
+                  onBlur={() => set({ heightCm: Math.max(KONFIG_LIMITS.minHeight, Math.min(Number(sel.heightCm) || KONFIG_LIMITS.minHeight, sliderMax)) })}
+                  className={inputCls + ' w-[110px] text-[15px] font-bold'} />
+                <span className="text-[13px] text-textsec">cm</span>
+              </div>
+            </Field>
+            {letterOversize && (
+              <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdeceb] text-warnred border border-warnred/40">
+                <Info size={15} className="flex-shrink-0 mt-0.5" />
+                <span>{t('konfig3.oversizeWarn', { max: KONFIG_LIMITS.quoteHeight })}</span>
+              </div>
+            )}
+            {/* Untergrenze: Fläche erzwingt Buchstaben < 10 cm → produktionsunmöglich, Warnbox + Warenkorb gesperrt */}
+            {areaTooSmall && (
+              <div className="text-[13px] px-3 py-2.5 flex items-start gap-2 bg-[#fdeceb] text-warnred border border-warnred/40">
+                <Info size={15} className="flex-shrink-0 mt-0.5" />
+                <span>{t('konfig3.undersizeWarn', { min: KONFIG_LIMITS.minHeight })}</span>
+              </div>
+            )}
+            <div className={`${box} px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px]`}>
+              <span className="inline-flex items-center gap-2"><Ruler size={15} className="text-accent" /> {t('konfig3.estWidth')}: <strong>{size ? `${size.widthCm} cm` : '—'}</strong></span>
+              {depthRec && <span className="text-textsec">{t('konfig3.recDepth')} <strong className="text-charcoal">{depthRec}</strong></span>}
+            </div>
+            {assess && (
+              <div className={`text-[13px] px-3 py-2.5 flex items-start gap-2 ${assess.status === 'good' ? 'bg-[#eaf6ee] text-[#1c7a45]' : assess.status === 'veryBig' ? 'bg-[#fdf3e6] text-[#9a6414]' : 'bg-[#fdeceb] text-warnred'}`}>
+                <Info size={15} className="flex-shrink-0 mt-0.5" />
+                <span>
+                  {assess.status === 'good' && t('konfig3.assessGood')}
+                  {assess.status === 'tooBig' && <>{t('konfig3.assessTooBigA')}<strong>{assess.recommendHeight} cm</strong>{t('konfig3.assessTooBigB')}</>}
+                  {assess.status === 'areaTooSmall' && t('konfig3.assessAreaTooSmall')}
+                  {assess.status === 'veryBig' && t('konfig3.assessVeryBig')}
+                  {assess.status === 'tinyLetters' && t('konfig3.assessTiny')}
+                </span>
+              </div>
+            )}
+          </section>
+
+          {/* 3. Vektormaß */}
+          <section className="flex flex-col gap-3">
+            <Head n={3} icon={Ruler}>{t('konfig3.secVector')}</Head>
+            <div className={`${box} px-4 py-5`}>
+              {size ? <VectorMass text={sel.text.trim()} fontClass={FONT_CLASS[sel.fontId] || ''} fontFamily={sel.fontId === 'custom' ? `'${CUSTOM_FONT_FAMILY}', sans-serif` : undefined} widthCm={size.widthCm} heightCm={sel.heightCm} availWidth={sel.availWidth} availHeight={sel.availHeight} frameLabel={t('konfig3.availFrame')} color={letterColor}
+                logo={logoDims ? { ...logoDims, shape: sel.logoShape, href: logoFile?.dataUrl || null, label: t('konfig3.rLogo') } : null}
+                wallColor={sel.wallColor}
+                lightDir={sel.lit === 'beleuchtet' ? sel.lightDir : null}
+                glowColor={sel.lit === 'beleuchtet' && sel.lightDir ? (LIGHT_COLORS.find((c) => c.id === sel.lightColor)?.glow || '#ffe6b0') : null} />
+                : <p className="m-0 text-[13px] text-textmut">{t('konfig3.vectorEmpty')}</p>}
+              {/* Wandfarbe: Kunde kombiniert die Buchstaben mit seiner Fassaden-/Untergrundfarbe */}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <span className="text-[12px] font-bold text-textsec mr-1">{t('konfig3.wallColorLabel')}</span>
+                {WALL_COLORS.map((c) => (
+                  <button key={c} onClick={() => set({ wallColor: c })} aria-label={c}
+                    className={`w-8 h-8 border-2 cursor-pointer ${sel.wallColor === c ? 'border-accent' : 'border-inputline hover:border-accent'}`}
+                    style={{ background: c }} />
+                ))}
+                <label className={`relative w-8 h-8 border-2 cursor-pointer overflow-hidden ${!WALL_COLORS.includes(sel.wallColor) ? 'border-accent' : 'border-inputline hover:border-accent'}`}
+                  title={t('konfig3.wallCustom')}
+                  style={{ background: 'conic-gradient(#f66 0 25%, #fd4 0 50%, #4d9 0 75%, #49f 0 100%)' }}>
+                  <input type="color" value={sel.wallColor} onChange={(e) => set({ wallColor: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                </label>
+              </div>
+              <p className="m-0 text-[11px] text-textmut text-center mt-2">{t('konfig3.vectorNote')}</p>
+            </div>
+          </section>
+
+          {/* 4. Tabellentyp */}
+          <section className="flex flex-col gap-3">
+            <Head n={4} icon={Lightbulb}>{t('konfig3.secType')}</Head>
+            <div className="grid grid-cols-2 gap-3">
+              {TABELLE_TYPES.map((ty) => (
+                <ImgChoice key={ty.id} folder="light" img={ty.img} title={oL('type', ty)} sub={oS('type', ty)} alt={ty.alt} active={sel.lit === ty.id} onClick={() => set({ lit: ty.id })} />
+              ))}
+            </div>
+          </section>
+
+          {/* 5A. Beleuchtet → Lichtrichtung + Optionen */}
+          {lit && (
+            <section className="flex flex-col gap-5">
+              <Head n="4A" icon={Sun}>{t('konfig3.secLightDir')}</Head>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {LIGHT_DIRS.filter((d) => !uvActive || d.id === 'front' || d.id === 'front_seite').map((d) => (
+                  <ImgChoice key={d.id} folder="light" img={d.img} title={oL('lightDir', d)} sub={oS('lightDir', d)} alt={d.alt} active={sel.lightDir === d.id} onClick={() => set({ lightDir: d.id })} />
+                ))}
+              </div>
+
+              {/* 4A1 Rückleuchtend */}
+              {sel.lightDir === 'rueck' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <Field label={t('konfig3.fCorpus')}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {BODY_MAT_RUECK.map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oLabel('bodyMat', m)} alt={m.alt} active={sel.bodyMaterial === m.id} onClick={() => set({ bodyMaterial: m.id })} />)}
+                    </div>
+                  </Field>
+                  {RUECK_CHROM_IDS.includes(sel.bodyMaterial) && <ChromPicker sel={sel} set={set} />}
+                  {RUECK_LACK_IDS.includes(sel.bodyMaterial) && (
+                    <Field label={t('konfig3.fRal')}>
+                      <RalSelect value={sel.ralCode} onChange={(v) => set({ ralCode: v })} />
+                    </Field>
+                  )}
+                  {RUECK_WAND_AKRYL_IDS.includes(sel.bodyMaterial) && (
+                    <Field label={t('konfig3.fBackPanel')}>
+                      <div className="grid grid-cols-2 gap-2 max-w-[360px]">
+                        {BACK_PANELS.map((b) => <ChoiceBtn key={b.id} active={sel.backPanelSize === b.id} onClick={() => set({ backPanelSize: b.id })} title={b.label} />)}
+                      </div>
+                    </Field>
+                  )}
+                  <LightColor sel={sel} set={set} />
+                  <Field label={t('konfig3.fWandabstand')}>
+                    <div className="grid grid-cols-3 gap-2">{WANDABSTAND.map((w) => <ChoiceBtn key={w.id} active={sel.wandabstand === w.id} onClick={() => set({ wandabstand: w.id })} title={w.label} sub={t(`konfig3.wandabstand.${w.id}`, null, w.desc)} />)}</div>
+                  </Field>
+                </div>
+              )}
+
+              {/* 4A2 Frontleuchtend */}
+              {sel.lightDir === 'front' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <AcrylPicker label={t('konfig3.fFaceAcryl')} value={sel.acrylFront} kontakt={sel.acrylFrontKontakt} onPick={(id) => set({ acrylFront: id })} onKontakt={(v) => set({ acrylFrontKontakt: v })} />
+                  <Field label={t('konfig3.fSideMaterial')}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{SIDE_MAT_FRONT.map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oLabel('sideMat', m)} alt={m.alt} active={sel.sideMaterial === m.id} onClick={() => set({ sideMaterial: m.id })} />)}</div>
+                  </Field>
+                  {CHROM_SIDE_IDS.includes(sel.sideMaterial) ? (
+                    <ChromPicker sel={sel} set={set} />
+                  ) : (
+                    <Field label={t('konfig3.fRal')}>
+                      <RalSelect value={sel.ralCode} onChange={(v) => set({ ralCode: v })} />
+                    </Field>
+                  )}
+                  <LightColor sel={sel} set={set} />
+                </div>
+              )}
+
+              {/* 4A3 Front- und seitenleuchtend */}
+              {sel.lightDir === 'front_seite' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <p className="m-0 text-[15px] font-extrabold text-charcoal">{t('konfig3.titleFrontSeite')}</p>
+                  <AcrylPicker label={t('konfig3.fFrontAcrylColor')} value={sel.acrylFront} kontakt={sel.acrylFrontKontakt} onPick={(id) => set({ acrylFront: id })} onKontakt={(v) => set({ acrylFrontKontakt: v })} />
+                  <AcrylPicker label={t('konfig3.fSideAcrylColor')} value={sel.acrylSide} kontakt={sel.acrylSideKontakt} onPick={(id) => set({ acrylSide: id })} onKontakt={(v) => set({ acrylSideKontakt: v })} />
+                  <LightColor sel={sel} set={set} />
+                  <p className="m-0 text-[12px] text-textsec flex items-center gap-1.5"><Info size={13} className="text-accent" /> {t('konfig3.infoFrontSeite')}</p>
+                </div>
+              )}
+
+              {/* 4A4 Seitenleuchtend — Korpus immer Chrom, keine Front-Farbwahl */}
+              {sel.lightDir === 'seite' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <p className="m-0 text-[15px] font-extrabold text-charcoal">{t('konfig3.titleSeite')}</p>
+                  <ChromPicker sel={sel} set={set} />
+                  <AcrylPicker label={t('konfig3.fSideAcrylLight')} value={sel.acrylSide} kontakt={sel.acrylSideKontakt} onPick={(id) => set({ acrylSide: id })} onKontakt={(v) => set({ acrylSideKontakt: v })} />
+                  <LightColor sel={sel} set={set} />
+                  <p className="m-0 text-[12px] text-textsec flex items-center gap-1.5"><Info size={13} className="text-accent" /> {t('konfig3.infoSeite')}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* 5B. Unbeleuchtet → Material */}
+          {sel.lit === 'unbeleuchtet' && (
+            <section className="flex flex-col gap-5">
+              <Head n="4B" icon={Square}>{t('konfig3.secMaterial')}</Head>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {UNBEL_MAT.filter((m) => !uvActive || m.id === 'plexi').map((m) => <ImgChoice key={m.id} folder="material" img={m.img} title={oL('unbelMat', m)} sub={oD('unbelMat', m)} alt={m.alt} active={sel.unbelMaterial === m.id} onClick={() => set({ unbelMaterial: m.id })} />)}
+              </div>
+              {sel.unbelMaterial === 'alu_lackiert' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <Field label={t('konfig3.fRal')}><RalSelect value={sel.unbelRal} onChange={(v) => set({ unbelRal: v })} /></Field>
+                  <Field label={t('konfig3.fSurface')}><div className="grid grid-cols-2 gap-2 max-w-[360px]">{SURFACES.map((s) => <ChoiceBtn key={s.id} active={sel.surface === s.id} onClick={() => set({ surface: s.id })} title={oL('surface', s)} sub={oD('surface', s)} />)}</div></Field>
+                  <Field label={t('konfig3.fDepth')}><div className="grid grid-cols-4 gap-2 max-w-[360px]">{DEPTHS.map((d) => <ChoiceBtn key={d.id} active={sel.depth === d.id} onClick={() => set({ depth: d.id })} title={d.label} />)}</div></Field>
+                </div>
+              )}
+              {sel.unbelMaterial === 'strafor' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <Field label={t('konfig3.fRal')}><RalSelect value={sel.unbelRal} onChange={(v) => set({ unbelRal: v })} /></Field>
+                </div>
+              )}
+              {sel.unbelMaterial === 'edelstahl_chrom' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  {/* Unbeleuchteter Edelstahl/Chrom: keine RAL-Lackierung (noRal) */}
+                  <ChromPicker sel={sel} set={set} noRal />
+                </div>
+              )}
+              {sel.unbelMaterial === 'plexi' && (
+                <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  <AcrylPicker label={t('konfig3.fAcrylColor')} value={sel.unbelAcryl} kontakt={sel.unbelAcrylKontakt} onPick={(id) => set({ unbelAcryl: id })} onKontakt={(v) => set({ unbelAcrylKontakt: v })} />
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* 5C. UV Baskı (HARF) — ışık/malzeme seçiminden SONRA: frontAcrylic burada kesinleşir,
+              yalnız harfin ön yüzü akrilikse gösterilir. Logo/çubuk UV'si kendi kutularında
+              (harf malzemesinden bağımsız). */}
+          {frontAcrylic && sel.text.trim() && (
+            <section className="flex flex-col gap-3">
+              <Head n="4C" icon={Sparkles}>{t('konfig3.uvBaskiLabel')}</Head>
+              <p className="m-0 text-[13px] text-textmut">{t('konfig3.uvBaskiHint')}</p>
+              <div className="flex flex-col gap-2">
+                <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.uvBaski ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
+                  <input type="checkbox" checked={sel.uvBaski === true} onChange={(e) => set({ uvBaski: e.target.checked })} className="w-4 h-4 accent-accent" />
+                  <span className="font-semibold text-charcoal">{t('konfig3.uvHarf')}</span>
+                </label>
+              </div>
+            </section>
+          )}
+    </>
   );
 }
