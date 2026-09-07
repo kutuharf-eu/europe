@@ -187,6 +187,15 @@ export default function AdminFiyatClient() {
         </div>
       </header>
       {msg && <p className={`m-0 text-[13px] font-semibold ${ok ? 'text-[#1c7a45]' : 'text-warnred'}`}>{msg}</p>}
+      {/* ⚠ Motor AÇIK mı? En üstte, "tanımsız değişkenler" listesinden ÖNCE. eurTry yoksa
+          motorun TAMAMI devre dışıdır ve site eski (legacy) formülle satar — bu Eylül 2026
+          başında üç gün fark edilmeden sürdü. Bir daha sessiz kalmasın. */}
+      {(vars.eurTry === null || vars.eurTry === undefined) && (
+        <div className="border-2 border-warnred bg-[#fdeceb] px-4 py-3 text-[13px] text-warnred flex flex-col gap-1">
+          <strong className="text-[15px]">{t('admin.engineOffTitle')}</strong>
+          <span>{t('admin.engineOffBody')}</span>
+        </div>
+      )}
       {missing.length > 0 && (
         <div className="border border-warnred/50 bg-[#fdeceb] px-4 py-3 text-[13px] text-warnred">
           <strong>{t('admin.missingTitle', { n: missing.length })}</strong> {missing.join(', ')} {t('admin.missingSuffix')}
