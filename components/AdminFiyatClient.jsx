@@ -30,7 +30,9 @@ const VAR_GROUPS = [
     ['montajGiderPerHarf', 'vMontajGider', 'price'], ['formMontajTaban', 'vFormMontajTaban', 'price'], ['formMontajPerLed', 'vFormMontajLed', 'price'],
   ] },
   { g: 'grpPaint', keys: [['kromBoyamaKucuk', 'vKromBoyamaK', 'price'], ['kromBoyamaBuyuk', 'vKromBoyamaB', 'price']] },
-  { g: 'grpMontage', keys: [['montajSablonFiyat', 'vMontajSablon', 'price']] },
+  { g: 'grpMontage', keys: [['montajSablonFiyat', 'vMontajSablon', 'price'],
+    ['montajTaban3m', 'vMontajTaban', 'price'], ['montajTabanMetre', 'vMontajTabanMetre', 'number'],
+    ['montajEkMetre', 'vMontajEkMetre', 'price']] },
   { g: 'grpGeneral', keys: [
     ['iscilikPerHarf', 'vIscilik', 'price'], ['fireYuzde', 'vFire', 'number'], ['riskYuzde', 'vRisk', 'number'],
     ['ambalajTaban', 'vAmbalaj', 'price'], ['minSiparis', 'vMinSiparis', 'price'], ['kdv', 'vKdv', 'number'],

@@ -2,6 +2,8 @@
 // buraya sorar; fiyat SUNUCUDA hesaplanır (lib/live-pricing). Ham maliyet kalemleri,
 // fiyat değişkenleri ve uyarılar İSTEMCİYE DÖNMEZ — yalnız satış rakamları döner.
 import { serverKonfigPrice } from '@/lib/live-pricing';
+import { getLivePricing } from '@/lib/pricing-vars';
+import { MONTAGE_QUOTE_DEFAULT } from '@/data/konfigurator';
 import { resolveHaendler } from '@/utils/haendlerAuth';
 import { KONFIG_LIMITS } from '@/data/konfigurator';
 
@@ -13,6 +15,31 @@ function isOversize(cfg) {
   const lh = cfg.logo ? Number(cfg.logo.heightCm) || 0 : 0;
   const ch = cfg.cubukLed ? Number(cfg.cubukLed.heightCm) || 0 : 0;
   return h > KONFIG_LIMITS.quoteHeight || lh > KONFIG_LIMITS.quoteHeight || ch > KONFIG_LIMITS.quoteHeight;
+}
+
+// Profi-Montage richtpreisinin BİRİM fiyatları (satış rakamı, maliyet değil → müşteriye
+// dönmesinde sakınca yok). İstemci bunlarla bütün yazıların toplam genişliğinden
+// richtpreisi hesaplar; tutar sepete GİRMEZ, teklifte netleşir.
+// TRY girilirse kur varsa çevrilir, yoksa varsayılan kullanılır (fiyat yanlış görünmesin).
+async function montageRates() {
+  try {
+    const { vars } = await getLivePricing();
+    const eur = (v, def) => {
+      if (!v || typeof v !== 'object') return def;
+      const a = Number(v.amount);
+      if (!Number.isFinite(a) || a <= 0) return def;
+      if (v.currency === 'EUR') return a;
+      if (v.currency === 'TRY' && vars.eurTry) return Math.round((a / Number(vars.eurTry)) * 100) / 100;
+      return def;
+    };
+    return {
+      tabanEUR: eur(vars.montajTaban3m, MONTAGE_QUOTE_DEFAULT.tabanEUR),
+      tabanMetre: Number(vars.montajTabanMetre) > 0 ? Number(vars.montajTabanMetre) : MONTAGE_QUOTE_DEFAULT.tabanMetre,
+      ekMetreEUR: eur(vars.montajEkMetre, MONTAGE_QUOTE_DEFAULT.ekMetreEUR),
+    };
+  } catch {
+    return { ...MONTAGE_QUOTE_DEFAULT };
+  }
 }
 
 export async function POST(request) {
@@ -65,9 +92,11 @@ export async function POST(request) {
   // zusatz: çok yazılı projenin 2..n. yazı bloğu — proje-seviyesi ücretler (ambalaj, minimum
   // sipariş, montaj) ilk blokta alındı, burada tekrar alınmaz; trafo blok başına kalır.
   const p = await serverKonfigPrice(cfg, { addon: body.addon === true, zusatz: body.zusatz === true, marjKey });
-  if (!p) return Response.json({ price: null });
+  const montage = await montageRates();
+  if (!p) return Response.json({ price: null, montageRates: montage });
 
   return Response.json({
+    montageRates: montage,
     price: {
       letters: p.letters,
       perLetter: p.perLetter,

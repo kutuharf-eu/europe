@@ -18,9 +18,11 @@ import {
   KONFIG_FONTS,
   KONFIG_MONTAGE,
   LOGO_LIMITS,
+  montageQuote,
+  MONTAGE_QUOTE_DEFAULT,
 } from '@/data/konfigurator';
 
-export { estimateSize, KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo, logoEquivalentLetters, normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS };
+export { estimateSize, KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo, logoEquivalentLetters, normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS, montageQuote, MONTAGE_QUOTE_DEFAULT };
 
 // ── Farb- & Optionslisten ────────────────────────────────────────────────────
 export const ACRYL_COLORS = [

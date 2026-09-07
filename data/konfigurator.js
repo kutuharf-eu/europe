@@ -259,6 +259,30 @@ export const countLetters = (text) => String(text || '').replace(/\s/g, '').leng
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
+// ── Profi-Montage richtpreisi (07 Eyl 2026, Murat) ───────────────────────────
+// "600 € 3 m'ye kadar, devam eden her ek metre 150 €, + yol + montaj malzemesi
+// (vida, makine) + konaklama." Yol/malzeme/konaklama işe göre değiştiği için
+// HESAPLANMAZ — bu tutar bir RİCHTPREİS'tir, sepete girmez, teklifte netleşir.
+// Ölçü: bütün yazıların tahmini toplam genişliği (montaj cephesi bu kadar uzar).
+// Başlayan her metre tam sayılır (3,2 m → 1 ek metre).
+export const MONTAGE_QUOTE_DEFAULT = { tabanEUR: 600, tabanMetre: 3, ekMetreEUR: 150 };
+
+export function montageQuote(widthCm, rates) {
+  const r = { ...MONTAGE_QUOTE_DEFAULT, ...(rates || {}) };
+  const w = Number(widthCm) || 0;
+  const taban = Number(r.tabanEUR) || 0;
+  const tabanM = Number(r.tabanMetre) || 0;
+  const ekBirim = Number(r.ekMetreEUR) || 0;
+  if (w <= 0 || taban <= 0 || tabanM <= 0) return null;
+  const metre = w / 100;
+  const ekMetre = Math.max(0, Math.ceil(metre - tabanM));
+  return {
+    metre: round2(metre), tabanEUR: taban, tabanMetre: tabanM,
+    ekMetre, ekMetreEUR: ekBirim, ekToplam: round2(ekMetre * ekBirim),
+    total: round2(taban + ekMetre * ekBirim),
+  };
+}
+
 // Geschätztes Schildmaß (vektorbasiert): Breite aus Zeichenbreiten + Zwischenräumen
 export function estimateSize({ text, heightCm, fontId }) {
   const font = KONFIG_FONTS.find((f) => f.id === fontId) || KONFIG_FONTS[0];

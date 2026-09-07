@@ -28,7 +28,7 @@ import {
   SIDE_MAT_FRONT, UNBEL_MAT, LIGHT_DIRS, TABELLE_TYPES,
   buildCfg, priceForState, detail3, recommendDepth, sizeAssessment, estimateSize, sanitizeV3Config,
   KONFIG_LIMITS, KONFIG_FONTS, KONFIG_MONTAGE, LOGO_LIMITS, normalizeLogo,
-  normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS,
+  normalizeCubukLed, cubukLedPieces, CUBUK_LED_LIMITS, montageQuote, MONTAGE_QUOTE_DEFAULT,
 } from '@/data/konfigurator3';
 import { maxLetterHeight, KONFIG_FONT_CATS } from '@/data/konfigurator';
 import { withAuthHeaders } from '@/utils/haendlerSession';
@@ -717,6 +717,9 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   // bleiben auf dem Server). Fehler/Timeout → lokale Formel bleibt stehen.
   const localPrice = priceForState(sel);
   const [serverPrice, setServerPrice] = useState(null);
+  // Profi-montaj birim fiyatlari sunucudan gelir (admin panelinden degistirilebilir).
+  // Gelmezse koddaki varsayilan kullanilir — kutu hic bos kalmaz.
+  const [montageRates, setMontageRates] = useState(MONTAGE_QUOTE_DEFAULT);
   const priceKey = priceKeyOf(cfg);
   useEffect(() => {
     setServerPrice(null);
@@ -738,6 +741,7 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
         if (res.ok) {
           const data = await res.json();
           if (data?.price) setServerPrice(data.price);
+          if (data?.montageRates) setMontageRates(data.montageRates);
         }
       } catch { /* lokale Formel bleibt */ }
     }, 350);
@@ -800,6 +804,14 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   // Özet panelinde ve sepet düğmelerinde gösterilen sipariş toplamı.
   const genelToplam = (price?.total || 0) + ekBlokToplam;
   const size = estimateSize({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId });
+  // Profi montaj: cephe bütün yazılar kadar uzar → toplam genişlik üzerinden TEK bir
+  // richtpreis (montaj zaten proje başına bir kez alınıyor). Sepete GİRMEZ: yol,
+  // montaj malzemesi ve konaklama işe göre değişir, kesin tutar teklifte netleşir.
+  const toplamGenislikCm = bloklar.reduce((a, b) => {
+    const sz = b.text.trim() ? estimateSize({ text: b.text, heightCm: b.heightCm, fontId: b.fontId }) : null;
+    return a + (sz?.widthCm || 0);
+  }, 0);
+  const montajTahmin = sel.montageId === 'profi' ? montageQuote(toplamGenislikCm, montageRates) : null;
   const assess = sizeAssessment({ text: sel.text, heightCm: sel.heightCm, fontId: sel.fontId, availWidth: sel.availWidth, availHeight: sel.availHeight });
   const depthRec = recommendDepth(sel.heightCm);
   // Max. Buchstabenhöhe aus verfügbarer Fläche (Breite &/oder Höhe)
@@ -1276,6 +1288,33 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
                 {oLabel('montage', m)} <span className={`ml-auto text-[12px] ${m.quote ? 'text-accent font-bold' : 'text-textmut'}`}>{m.quote ? t('konfig3.montageQuote') : m.price === 0 ? t('konfig3.inclusive') : '+' + fmtEur(m.price)}</span>
               </label>
             ))}
+            {/* Profi montaj richtpreisi — YALNIZ gösterim, sepete girmez. Ölçü: bütün
+                yazıların tahmini toplam genişliği; başlayan her metre tam sayılır. */}
+            {montajTahmin && (
+              <div className="border border-accent/50 bg-accent/[0.05] px-4 py-3 flex flex-col gap-1.5">
+                <span className="text-[14px] font-extrabold text-charcoal">{t('konfig3.montageCalcTitle')}</span>
+                <span className="text-[12px] text-textsec">
+                  {t('konfig3.montageCalcWidth', { m: montajTahmin.metre.toLocaleString('de-DE') })}
+                </span>
+                <div className="flex justify-between gap-3 text-[13px]">
+                  <span className="text-textsec">{t('konfig3.montageCalcBase', { n: montajTahmin.tabanMetre })}</span>
+                  <strong className="text-charcoal tabular-nums">{fmtEur(montajTahmin.tabanEUR)}</strong>
+                </div>
+                {montajTahmin.ekMetre > 0 && (
+                  <div className="flex justify-between gap-3 text-[13px]">
+                    <span className="text-textsec">
+                      {t('konfig3.montageCalcExtra', { k: montajTahmin.ekMetre, p: fmtEur(montajTahmin.ekMetreEUR) })}
+                    </span>
+                    <strong className="text-charcoal tabular-nums">{fmtEur(montajTahmin.ekToplam)}</strong>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3 text-[15px] border-t border-linegray pt-1.5">
+                  <span className="font-extrabold text-charcoal">{t('konfig3.montageCalcTotal')}</span>
+                  <strong className="text-charcoal tabular-nums">{fmtEur(montajTahmin.total)}</strong>
+                </div>
+                <p className="m-0 text-[12px] text-textmut">{t('konfig3.montageCalcNote')}</p>
+              </div>
+            )}
             {/* Montaj Delme Şablonu — bağımsız, admin-fiyatlı ek ürün (kutucuk) */}
             <label className={`flex items-center gap-3 px-4 py-3 bg-white border-2 cursor-pointer text-[15px] ${sel.bohrschablone ? 'border-accent bg-accent/5' : 'border-linegray'}`}>
               <input type="checkbox" checked={sel.bohrschablone === true} onChange={(e) => set({ bohrschablone: e.target.checked })} className="w-4 h-4 accent-accent" />
