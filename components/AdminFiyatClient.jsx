@@ -104,13 +104,14 @@ export default function AdminFiyatClient() {
   const [ok, setOk] = useState(false);
 
   // Örnek ürün TEK yerde tanımlanır (25 Tem 2026, Murat: "bir de extra seçim olmasına
-  // gerek yok"). Hem marj/fiyat önizlemesi hem metraj tablosu bu girdiyi kullanır —
-  // iki ayrı yazı/font/boy kutusu yoktu, artık aynı örnek her iki tabloyu birden besler.
-  const [sample, setSample] = useState({
-    text: 'DÖNER', heightCm: 50, lit: 'beleuchtet',
-    lightDir: 'rueck', sideMaterial: 'aluminium', unbelMaterial: 'plexi',
-    fontId: 'anton',
-  });
+  // gerek yok"). Hem marj/fiyat önizlemesi hem metraj tablosu bu girdiyi kullanır.
+  // 07 Eyl 2026: müşteri konfigüratörü gibi ÇOK YAZILI — her yazının kendi fontu,
+  // yüksekliği ve tabela tipi var; proje ücretleri (ambalaj/minimum/montaj) yalnız
+  // ilk yazıda sayılır, her yazı kendi trafosunu taşır.
+  const [samples, setSamples] = useState([{ ...SAMPLE_DEFAULT }]);
+  const sampleUpd = (i, patch) => setSamples((ss) => ss.map((x, n) => (n === i ? { ...x, ...patch } : x)));
+  const sampleAdd = () => setSamples((ss) => (ss.length >= MAX_SAMPLE ? ss : [...ss, { ...ss[ss.length - 1] }]));
+  const sampleDel = (i) => setSamples((ss) => (ss.length < 2 ? ss : ss.filter((_, n) => n !== i)));
 
   const load = async (k) => {
     setBusy(true); setMsg('');
@@ -192,7 +193,7 @@ export default function AdminFiyatClient() {
 
       <MarginPreviewSection
         marj={vars.marj} onMarjChange={(v) => setVar('marj', v)} adminKey={key}
-        f={sample} onSampleChange={(patch) => setSample((s) => ({ ...s, ...patch }))} />
+        samples={samples} onSampleChange={sampleUpd} onSampleAdd={sampleAdd} onSampleRemove={sampleDel} />
 
       {VAR_GROUPS.map((g) => (
         <section key={g.g} className="flex flex-col gap-2">
@@ -220,7 +221,10 @@ export default function AdminFiyatClient() {
       <ExtrasSection extras={extras} onSave={(rows) => save(rows)} busy={busy} />
       <p className="text-[12px] text-textmut m-0">{t('admin.extrasNote')}</p>
 
-      <MetrajSection text={sample.text} heightCm={sample.heightCm} fontId={sample.fontId} />
+      {samples.map((sm, i) => (
+        <MetrajSection key={i} text={sm.text} heightCm={sm.heightCm} fontId={sm.fontId}
+          blockLabel={samples.length > 1 ? t('admin.sampleBlock', { n: i + 1 }, `Schriftzug ${i + 1}`) : null} />
+      ))}
     </main>
   );
 }
@@ -229,7 +233,7 @@ export default function AdminFiyatClient() {
 // Kendi girdisi YOKTUR: yukarıdaki örnek ürün (yazı · font · yükseklik) neyse onu
 // gösterir. Font artık 3 referansla sınırlı değil — katsayılar tüm konfigüratör
 // fontları için üretiliyor (npm run coeff:all); dosyası olmayan fontta archivo'ya düşer.
-function MetrajSection({ text, heightCm, fontId }) {
+function MetrajSection({ text, heightCm, fontId, blockLabel }) {
   const t = useT();
   const hCm = heightCm;
   const font = fontId;
@@ -289,7 +293,9 @@ function MetrajSection({ text, heightCm, fontId }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-[15px] font-extrabold m-0 border-b border-linegray pb-1.5">{t('admin.metrajTitle')}</h2>
+      <h2 className="text-[15px] font-extrabold m-0 border-b border-linegray pb-1.5">
+        {t('admin.metrajTitle')}{blockLabel && <span className="text-textmut font-normal"> · {blockLabel}</span>}
+      </h2>
       {/* Girdi kutusu yok — yukarıdaki örnek ürünü izler. */}
       <p className="m-0 text-[12px] text-textmut">
         {t('admin.metrajFollows')} <strong className="text-charcoal">„{text}“ · {KONFIG_FONTS.find((x) => x.id === font)?.label || font} · {hCm} cm</strong>
@@ -421,14 +427,61 @@ const MARJ_TIERS = [
   { id: 'standart', labelKey: 'tierStandart', hintKey: 'hintStandart' },
   { id: 'premium', labelKey: 'tierPremium', hintKey: 'hintPremium' },
 ];
+// Örnek ürünün varsayılanı ve en fazla kaç yazı karşılaştırılabileceği. Sınır teknik
+// değil, ekran içindir: metraj tablosu yazı başına bir tablo çiziyor.
+const SAMPLE_DEFAULT = {
+  text: 'DÖNER', heightCm: 50, lit: 'beleuchtet',
+  lightDir: 'rueck', sideMaterial: 'aluminium', unbelMaterial: 'plexi',
+  fontId: 'anton',
+};
+const MAX_SAMPLE = 4;
+const round2 = (n) => Math.round(n * 100) / 100;
 const eurFmt = (n) => (typeof n === 'number' ? n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) : '—');
 const tryFmt = (n) => (typeof n === 'number' ? Math.round(n).toLocaleString('de-DE') + ' ₺' : '—');
 const REASON_KEY = { invalid: 'reasonInvalid', no_kur: 'reasonNoKur', legacy: 'reasonLegacy' };
 
-// Örnek konfigürasyon (f) ARTIK ÜST BİLEŞENDE tutulur — metraj tablosu da aynı
+// Örnek konfigürasyon (samples) ARTIK ÜST BİLEŞENDE tutulur — metraj tablosu da aynı
 // girdiyi kullanıyor. Işıklı: ışık yönü + kenar malzemesi · Işıksız: malzeme (UNBEL_MAT).
 // Montaj seçimi yok: Profi-Montage yalnız "Teklif İste" (fiyatlanmaz), örnek hep 'selbst'.
-function MarginPreviewSection({ marj, onMarjChange, adminKey, f, onSampleChange }) {
+//
+// Çok yazı: her yazı için ayrı önizleme çekilir (2..n'e `zusatz: true`) ve sonuçlar
+// TEK sonuç nesnesine toplanır — böylece aşağıdaki maliyet kutusu ve kademe tablosu
+// tek yazıdaki biçimiyle, hiç değişmeden çalışır.
+function birlestir(list) {
+  const ilk = list[0];
+  if (list.length === 1) return ilk;
+  const topla = (fn) => round2(list.reduce((a, r) => a + (Number(fn(r)) || 0), 0));
+  const maliyet = topla((r) => r.cost.orderEUR);
+  const tiers = {};
+  for (const tk of Object.keys(ilk.tiers)) {
+    const kar = topla((r) => r.tiers[tk].profitEUR);
+    tiers[tk] = {
+      marj: ilk.tiers[tk].marj,                       // marj bütün yazılarda aynı (aynı değişkenler)
+      total: topla((r) => r.tiers[tk].total),
+      profitEUR: kar,
+      // Minimum sipariş tabanı yalnız ilk yazıya uygulanır (taban sipariş başınadır).
+      minApplied: list.some((r) => r.tiers[tk].minApplied),
+      marginPct: maliyet > 0 ? round2((kar / maliyet) * 100) : null,
+    };
+  }
+  const bd = (k) => topla((r) => r.cost.breakdown[k]);
+  return {
+    ok: true, source: ilk.source, activeTier: ilk.activeTier, kurlar: ilk.kurlar, tiers,
+    letters: list.reduce((a, r) => a + (r.letters || 0), 0),
+    cost: {
+      orderEUR: maliyet, orderTRY: topla((r) => r.cost.orderTRY),
+      materialEUR: topla((r) => r.cost.materialEUR), materialTRY: topla((r) => r.cost.materialTRY),
+      fire: ilk.cost.fire, risk: ilk.cost.risk,
+      breakdown: {
+        lettersCostEUR: bd('lettersCostEUR'), trafoCostEUR: bd('trafoCostEUR'),
+        ambalajCostEUR: bd('ambalajCostEUR'), logoCostEUR: bd('logoCostEUR'),
+        cubukLedCostEUR: bd('cubukLedCostEUR'), montageEUR: bd('montageEUR'),
+      },
+    },
+  };
+}
+
+function MarginPreviewSection({ marj, onMarjChange, adminKey, samples, onSampleChange, onSampleAdd, onSampleRemove }) {
   const t = useT();
   const m = marj && typeof marj === 'object' ? marj : {};
   const setTier = (id, v) => onMarjChange({ ...m, [id]: v === '' ? null : Number(v) });
@@ -436,38 +489,46 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey, f, onSampleChange 
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const upd = (patch) => { onSampleChange(patch); setRes(null); };
+  const upd = (i, patch) => { onSampleChange(i, patch); setRes(null); };
+  const ekle = () => { onSampleAdd(); setRes(null); };
+  const sil = (i) => { onSampleRemove(i); setRes(null); };
 
   const run = async () => {
     setBusy(true); setErr('');
     try {
-      // Müşteri seçimini fiyat cfg'sine çevir (buildCfg) → tam olarak müşterinin gönderdiği alanlar.
-      const cfg = buildCfg({
-        text: f.text, heightCm: Number(f.heightCm), lit: f.lit,
-        lightDir: f.lightDir, sideMaterial: f.sideMaterial, unbelMaterial: f.unbelMaterial,
-        fontId: f.fontId, montageId: 'selbst',
-      });
-      const body = {
-        text: cfg.text, heightCm: cfg.heightCm, lightMode: cfg.lightMode,
-        lightingId: cfg.lightingId, constructionId: cfg.constructionId, unbelMaterial: cfg.unbelMaterial,
-        fontId: cfg.fontId, montageId: cfg.montageId, trafo: cfg.trafo, chromColor: cfg.chromColor, depth: cfg.depth,
-      };
-      const r = await fetch('/api/admin/pricing/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-        body: JSON.stringify(body),
-      });
-      const d = await r.json();
-      if (!r.ok) { setErr(d.error || t('admin.loadErr')); return; }
-      if (!d.ok) { setErr(t('admin.' + (REASON_KEY[d.reason] || 'calcFailed'))); return; }
-      setRes(d);
+      const cevaplar = [];
+      for (const [i, f] of samples.entries()) {
+        // Müşteri seçimini fiyat cfg'sine çevir (buildCfg) → tam olarak müşterinin gönderdiği alanlar.
+        const cfg = buildCfg({
+          text: f.text, heightCm: Number(f.heightCm), lit: f.lit,
+          lightDir: f.lightDir, sideMaterial: f.sideMaterial, unbelMaterial: f.unbelMaterial,
+          fontId: f.fontId, montageId: 'selbst',
+        });
+        const body = {
+          text: cfg.text, heightCm: cfg.heightCm, lightMode: cfg.lightMode,
+          lightingId: cfg.lightingId, constructionId: cfg.constructionId, unbelMaterial: cfg.unbelMaterial,
+          fontId: cfg.fontId, montageId: cfg.montageId, trafo: cfg.trafo, chromColor: cfg.chromColor, depth: cfg.depth,
+          // 2..n. yazı: ambalaj / minimum sipariş / montaj ikinci kez sayılmaz.
+          zusatz: i > 0,
+        };
+        const r = await fetch('/api/admin/pricing/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (!r.ok) { setErr(d.error || t('admin.loadErr')); return; }
+        if (!d.ok) { setErr(t('admin.' + (REASON_KEY[d.reason] || 'calcFailed'))); return; }
+        cevaplar.push(d);
+      }
+      setRes(birlestir(cevaplar));
     } catch { setErr(t('admin.connErr')); }
     finally { setBusy(false); }
   };
 
   // Örnek fiyatlar OTOMATİK: giriş değişince (debounce) üretim maliyeti yeniden çekilir;
   // marj yüzdesi değişince kutu altındaki fiyatlar anında (istemci tarafında) güncellenir.
-  const fKey = JSON.stringify(f);
+  const fKey = JSON.stringify(samples);
   useEffect(() => {
     if (!adminKey) return;
     const tmr = setTimeout(run, 600);
@@ -539,7 +600,10 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey, f, onSampleChange 
                 </label>
                 {/* Örnek ürün fiyatı — kutunun hemen altında; yüzde değişince anında güncellenir */}
                 <span className="text-[12px] font-semibold text-textsec px-1">
-                  „{f.text}“ <strong className="text-charcoal tabular-nums">{p == null ? '—' : eurFmt(p)}</strong>
+                  {samples.length > 1
+                    ? t('admin.sampleTotalLabel', { n: samples.length }, `Projekt gesamt (${samples.length})`)
+                    : `„${samples[0].text}“`}{' '}
+                  <strong className="text-charcoal tabular-nums">{p == null ? '—' : eurFmt(p)}</strong>
                 </span>
               </div>
             );
@@ -548,52 +612,83 @@ function MarginPreviewSection({ marj, onMarjChange, adminKey, f, onSampleChange 
         <p className="m-0 text-[12px] text-textmut">{t('admin.marginSaveHint')}</p>
       </div>
 
-      {/* Örnek konfigürasyon — iki grup: (1) yazı · font · yükseklik, (2) aydınlatma · ışık yönü · kenar malzemesi */}
-      <div className="flex flex-col gap-3 border-t border-linegray pt-3">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-extrabold uppercase tracking-wide text-textmut">{t('admin.grpSampleBase')}</span>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleText')}
-              <input className={inputCls + ' w-[150px]'} value={f.text} onChange={(e) => upd({ text: e.target.value })} /></label>
-            <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleFont')}
-              <select className={inputCls + ' w-[150px]'} value={f.fontId} onChange={(e) => upd({ fontId: e.target.value })}>
-                {KONFIG_FONTS.filter((x) => !x.custom).map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-              </select></label>
-            <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleHeight')}
-              <input type="number" min={1} className={inputCls + ' w-[90px]'} value={f.heightCm} onChange={(e) => upd({ heightCm: e.target.value })} /></label>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-extrabold uppercase tracking-wide text-textmut">{t('admin.grpSampleLight')}</span>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleLighting')}
-              <select className={inputCls + ' w-[150px]'} value={f.lit} onChange={(e) => upd({ lit: e.target.value })}>
-                {TABELLE_TYPES.map((ty) => <option key={ty.id} value={ty.id}>{t(`konfig3.type.${ty.id}.l`, null, ty.label)}</option>)}
-              </select></label>
-            {/* Işıklı: ışık yönü + kenar malzemesi · Işıksız: malzeme listesi (müşterideki UNBEL_MAT:
-                Akrilik / Boyalı krom / Paslanmaz-Krom / Strafor) — ışık yok, yön de yok. */}
-            {f.lit === 'beleuchtet' ? (
-              <>
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleLightDir')}
-                  <select className={inputCls + ' w-[190px]'} value={f.lightDir} onChange={(e) => upd({ lightDir: e.target.value })}>
-                    {LIGHT_DIRS.map((d) => <option key={d.id} value={d.id}>{t(`konfig3.lightDir.${d.id}.l`, null, d.label)}</option>)}
-                  </select></label>
-                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleSideMat')}
-                  <select className={inputCls + ' w-[190px]'} value={f.sideMaterial} onChange={(e) => upd({ sideMaterial: e.target.value })}>
-                    {SIDE_MAT_FRONT.map((s) => <option key={s.id} value={s.id}>{t(`konfig3.sideMat.${s.id}`, null, s.label)}</option>)}
-                  </select></label>
-              </>
-            ) : (
-              <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleMaterial')}
-                <select className={inputCls + ' w-[190px]'} value={f.unbelMaterial} onChange={(e) => upd({ unbelMaterial: e.target.value })}>
-                  {UNBEL_MAT.map((mm) => <option key={mm.id} value={mm.id}>{t(`konfig3.unbelMat.${mm.id}.l`, null, mm.label)}</option>)}
-                </select></label>
+      {/* Örnek konfigürasyon — yazı başına iki grup: (1) yazı · font · yükseklik,
+          (2) aydınlatma · ışık yönü · kenar malzemesi. Birden çok yazı eklenebilir;
+          proje ücretleri (ambalaj/minimum/montaj) yalnız 1. yazıda sayılır. */}
+      <div className="flex flex-col gap-4 border-t border-linegray pt-3">
+        {samples.map((f, i) => (
+          <div key={i} className={`flex flex-col gap-3 ${i > 0 ? 'border-l-2 border-accent/40 pl-3' : ''}`}>
+            {samples.length > 1 && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[12px] font-extrabold text-charcoal">
+                  {t('admin.sampleBlock', { n: i + 1 }, `Schriftzug ${i + 1}`)}
+                </span>
+                {i > 0 && (
+                  <button onClick={() => sil(i)} className="text-[12px] font-semibold text-warnred underline cursor-pointer bg-transparent border-0 p-0">
+                    {t('admin.sampleRemove', null, 'Entfernen')}
+                  </button>
+                )}
+              </div>
             )}
-            <button onClick={run} disabled={busy || !adminKey} className="bg-accent text-white font-semibold px-5 py-2.5 cursor-pointer disabled:opacity-40 self-end">
-              {busy ? t('admin.calculating') : t('admin.compareBtn')}
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wide text-textmut">{t('admin.grpSampleBase')}</span>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleText')}
+                  <input className={inputCls + ' w-[150px]'} value={f.text} onChange={(e) => upd(i, { text: e.target.value })} /></label>
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleFont')}
+                  <select className={inputCls + ' w-[150px]'} value={f.fontId} onChange={(e) => upd(i, { fontId: e.target.value })}>
+                    {KONFIG_FONTS.filter((x) => !x.custom).map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+                  </select></label>
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleHeight')}
+                  <input type="number" min={1} className={inputCls + ' w-[90px]'} value={f.heightCm} onChange={(e) => upd(i, { heightCm: e.target.value })} /></label>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wide text-textmut">{t('admin.grpSampleLight')}</span>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleLighting')}
+                  <select className={inputCls + ' w-[150px]'} value={f.lit} onChange={(e) => upd(i, { lit: e.target.value })}>
+                    {TABELLE_TYPES.map((ty) => <option key={ty.id} value={ty.id}>{t(`konfig3.type.${ty.id}.l`, null, ty.label)}</option>)}
+                  </select></label>
+                {/* Işıklı: ışık yönü + kenar malzemesi · Işıksız: malzeme listesi (müşterideki UNBEL_MAT:
+                    Akrilik / Boyalı krom / Paslanmaz-Krom / Strafor) — ışık yok, yön de yok. */}
+                {f.lit === 'beleuchtet' ? (
+                  <>
+                    <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleLightDir')}
+                      <select className={inputCls + ' w-[190px]'} value={f.lightDir} onChange={(e) => upd(i, { lightDir: e.target.value })}>
+                        {LIGHT_DIRS.map((d) => <option key={d.id} value={d.id}>{t(`konfig3.lightDir.${d.id}.l`, null, d.label)}</option>)}
+                      </select></label>
+                    <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleSideMat')}
+                      <select className={inputCls + ' w-[190px]'} value={f.sideMaterial} onChange={(e) => upd(i, { sideMaterial: e.target.value })}>
+                        {SIDE_MAT_FRONT.map((sm) => <option key={sm.id} value={sm.id}>{t(`konfig3.sideMat.${sm.id}`, null, sm.label)}</option>)}
+                      </select></label>
+                  </>
+                ) : (
+                  <label className="flex flex-col gap-1 text-[12px] font-semibold text-textsec">{t('admin.sampleMaterial')}
+                    <select className={inputCls + ' w-[190px]'} value={f.unbelMaterial} onChange={(e) => upd(i, { unbelMaterial: e.target.value })}>
+                      {UNBEL_MAT.map((mm) => <option key={mm.id} value={mm.id}>{t(`konfig3.unbelMat.${mm.id}.l`, null, mm.label)}</option>)}
+                    </select></label>
+                )}
+              </div>
+            </div>
           </div>
+        ))}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {samples.length < MAX_SAMPLE && (
+            <button onClick={ekle} className="border border-accent text-accent font-semibold px-4 py-2 cursor-pointer bg-transparent">
+              + {t('admin.sampleAdd', { n: samples.length + 1 }, `Weiteren Schriftzug hinzufügen (${samples.length + 1}.)`)}
+            </button>
+          )}
+          <button onClick={run} disabled={busy || !adminKey} className="bg-accent text-white font-semibold px-5 py-2.5 cursor-pointer disabled:opacity-40">
+            {busy ? t('admin.calculating') : t('admin.compareBtn')}
+          </button>
         </div>
+        {samples.length > 1 && (
+          <p className="m-0 text-[12px] text-textmut">
+            {t('admin.sampleSumHint', null, 'Mehrere Schriftzüge = ein Projekt.')}
+          </p>
+        )}
       </div>
 
       {err && <p className="m-0 text-[13px] text-warnred font-semibold">{err}</p>}

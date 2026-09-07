@@ -32,6 +32,8 @@ export async function POST(request) {
     depth: body.depth,
   };
 
-  const r = await serverAdminPricePreview(cfg);
+  // zusatz: çok yazılı örneğin 2..n. yazısı — proje ücretleri (ambalaj, minimum
+  // sipariş, montaj) yalnız ilk yazıda sayılır, tıpkı müşteri siparişindeki gibi.
+  const r = await serverAdminPricePreview(cfg, { zusatz: body.zusatz === true });
   return Response.json(r);
 }
