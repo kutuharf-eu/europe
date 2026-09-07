@@ -59,6 +59,7 @@ export default function KasseClient() {
             m2: i.m2 || null,
             konfig: i.konfig || null,
             addon: i.addon === true,
+            zusatz: i.zusatz === true,
             fileUrl: i.fileUrl || null,
             fileName: i.fileName || null,
             note: i.note || null,

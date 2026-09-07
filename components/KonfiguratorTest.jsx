@@ -154,6 +154,26 @@ const DIR_ICON = { rueck: Lightbulb, front: Sun, front_seite: Layers, seite: Spa
 // zaten "Proje talebi" akışına yönlendiriliyor.
 const MAX_BLOK = 6;
 
+// Ek yazı bloklarında SIFIRLANAN sipariş-seviyesi alanlar. Tek yerde tanımlı ki
+// fiyat hesabı (ekBlokFiyatlari) ve sepet kalemi (buildEkBlokItem) asla ayrışmasın:
+// logo · çubuk LED · montaj · delme şablonu ana blokta bir kez ücretlenir.
+const EK_BLOK_SIFIR = {
+  logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false,
+  cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
+  montageId: 'selbst', bohrschablone: false,
+};
+
+// /api/price'ın allowlist'iyle AYNI alanlar, aynı sırada. İstek kimliği (debounce/önbellek
+// anahtarı) ve istek gövdesi tek kaynaktan üretilir → ana blok ile ek bloklar asla ayrışmaz.
+const PRICE_FIELDS = ['text', 'heightCm', 'lightMode', 'lightingId', 'constructionId', 'fontId',
+  'montageId', 'trafo', 'logo', 'logoPrint', 'uvBaski', 'logoUv', 'cubukUv', 'unbelMaterial',
+  'chromColor', 'depth', 'bohrschablone', 'cubukLed'];
+const priceKeyOf = (c) => JSON.stringify(PRICE_FIELDS.map((f) => c[f]));
+const priceBodyOf = (key) => {
+  const v = JSON.parse(key);
+  return Object.fromEntries(PRICE_FIELDS.map((f, i) => [f, v[i]]));
+};
+
 const DEFAULTS = {
   text: 'IHR SCHRIFTZUG', fontId: 'modern', customFontName: '',
   logoWidthCm: '', logoHeightCm: '', logoName: '', logoUrl: '',
@@ -697,14 +717,14 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   // bleiben auf dem Server). Fehler/Timeout → lokale Formel bleibt stehen.
   const localPrice = priceForState(sel);
   const [serverPrice, setServerPrice] = useState(null);
-  const priceKey = JSON.stringify([cfg.text, cfg.heightCm, cfg.lightMode, cfg.lightingId, cfg.constructionId, cfg.fontId, cfg.montageId, cfg.trafo, cfg.logo, cfg.logoPrint, cfg.uvBaski, cfg.logoUv, cfg.cubukUv, cfg.unbelMaterial, cfg.chromColor, cfg.depth, cfg.bohrschablone, cfg.cubukLed]);
+  const priceKey = priceKeyOf(cfg);
   useEffect(() => {
     setServerPrice(null);
     if (!localPrice) return;
     const ctl = new AbortController();
     const tmr = setTimeout(async () => {
       try {
-        const [text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed] = JSON.parse(priceKey);
+        const govde = priceBodyOf(priceKey);
         // Yalnız Händler bağlamında token + haendlerContext gönderilir → sunucu Händler fiyatı döner.
         // Ana sitede token gönderilmez → daima standart/premium (son müşteri deneyimi).
         const headers = haendlerMode
@@ -712,7 +732,7 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
           : { 'Content-Type': 'application/json' };
         const res = await fetch('/api/price', {
           method: 'POST', headers,
-          body: JSON.stringify({ text, heightCm, lightMode, lightingId, constructionId, fontId, montageId, trafo, logo, logoPrint, uvBaski, logoUv, cubukUv, unbelMaterial, chromColor, depth, bohrschablone, cubukLed, haendlerContext: haendlerMode }),
+          body: JSON.stringify({ ...govde, haendlerContext: haendlerMode }),
           signal: ctl.signal,
         });
         if (res.ok) {
@@ -735,12 +755,47 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   //   logo · çubuk LED → zaten yalnız 0. blokta girilebiliyor
   //   montaj           → tek sevkiyat/montaj, 'selbst' = ücretsiz
   //   delme şablonu    → sipariş başına bir adet
-  const ekBlokFiyatlari = bloklar.slice(1).map((b) => priceForState({
-    ...b,
-    logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false,
-    cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
-    montageId: 'selbst', bohrschablone: false,
-  }));
+  const ekBlokSel = bloklar.slice(1).map((b) => ({ ...b, ...EK_BLOK_SIFIR }));
+  const ekBlokYerel = ekBlokSel.map((b) => priceForState(b));
+  // Ek bloklar da ana blok gibi SUNUCUDA rafine edilir (`zusatz: true`). Bu şart:
+  //  · Händler bağlamında yerel formülün bayi kademesinden haberi yok → 2. yazı
+  //    standart fiyattan görünürdü (bayiye fazla fiyat).
+  //  · Yerel formül gerçek malzeme maliyetlerini bilmez; ana blokla aynı motoru
+  //    kullanmazsa aynı yazı 1. sırada başka, 2. sırada başka fiyatlanır.
+  // `zusatz` bayrağı ambalaj/minimum sipariş/montajı ikinci kez almaz, trafoyu bırakır.
+  const ekPriceKeys = ekBlokSel.map((b, i) => (ekBlokYerel[i] ? priceKeyOf(buildCfg(b)) : null));
+  const [ekServerPrices, setEkServerPrices] = useState({});
+  const ekKeysDep = JSON.stringify(ekPriceKeys);
+  useEffect(() => {
+    const keys = [...new Set(JSON.parse(ekKeysDep).filter(Boolean))];
+    if (!keys.length) { setEkServerPrices({}); return; }
+    const ctl = new AbortController();
+    const tmr = setTimeout(async () => {
+      const headers = haendlerMode
+        ? await withAuthHeaders({ 'Content-Type': 'application/json' })
+        : { 'Content-Type': 'application/json' };
+      const gelen = {};
+      await Promise.all(keys.map(async (k) => {
+        try {
+          const res = await fetch('/api/price', {
+            method: 'POST', headers,
+            body: JSON.stringify({ ...priceBodyOf(k), zusatz: true, haendlerContext: haendlerMode }),
+            signal: ctl.signal,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.price) gelen[k] = data.price;
+          }
+        } catch { /* yerel formül geçerli kalır */ }
+      }));
+      if (ctl.signal.aborted) return;
+      // Yalnız GÜNCEL anahtarlar saklanır → eski bloklara ait yanıtlar birikmez.
+      setEkServerPrices((o) => Object.fromEntries(keys.filter((k) => gelen[k] || o[k]).map((k) => [k, gelen[k] || o[k]])));
+    }, 350);
+    return () => { clearTimeout(tmr); ctl.abort(); };
+  }, [ekKeysDep, haendlerMode]);
+  // Sunucu yanıtı gelene (veya hata verene) kadar yerel formül gösterilir — fiyat titremez.
+  const ekBlokFiyatlari = ekBlokYerel.map((p, i) => (p ? (ekServerPrices[ekPriceKeys[i]] || p) : null));
   const ekBlokToplam = ekBlokFiyatlari.reduce((a, p) => a + (p?.total || 0), 0);
   // Özet panelinde ve sepet düğmelerinde gösterilen sipariş toplamı.
   const genelToplam = (price?.total || 0) + ekBlokToplam;
@@ -870,12 +925,7 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
   // montaj, delme şablonu) burada da sıfırlanır: onlar ana blokta ücretlendi.
   // Fiyat ekBlokFiyatlari'ndan gelir → panelde gösterilen tutarla BİREBİR aynı.
   const buildEkBlokItem = (i) => {
-    const s2 = {
-      ...bloklar[i],
-      logoWidthCm: '', logoHeightCm: '', logoDiameterCm: '', logoUv: false,
-      cubukLedCm: '', cubukLedHeightCm: '', cubukUv: false,
-      montageId: 'selbst', bohrschablone: false,
-    };
+    const s2 = { ...bloklar[i], ...EK_BLOK_SIFIR };
     return {
       categorySlug: 'werbetechnik',
       productSlug: 'konfigurator-3d-buchstaben',
@@ -883,6 +933,9 @@ export default function KonfiguratorTest({ haendlerMode = false }) {
       detail: detail3(s2),
       unitPrice: ekBlokFiyatlari[i - 1]?.total || 0,
       konfig: buildCfg(s2),
+      // Sipariş ucu proje ücretlerini (ambalaj/minimum/montaj) bu kalemde ikinci kez almasın.
+      // Bayrak tek başına ücret atlatmaz: /api/order en az bir harf kalemini TAM fiyatlar.
+      zusatz: true,
     };
   };
 

@@ -369,8 +369,9 @@ export function konfigPrice({ text, heightCm, lightMode, lightingId, constructio
     cubukInfo = { ...cl, pieces: cubukLedPieces(cl.lengthCm), eqLetters: eq, perLetter: clPerLetter, total: round2(clPerLetter * eq) };
   }
 
-  // addon (bağımsız ek ürün): montaj proje-seviyesi kalem → ek üründe uygulanmaz.
-  const montagePrice = opts.addon ? 0 : montage.price;
+  // addon (bağımsız ek ürün) ve zusatz (ek yazı bloğu): montaj proje-seviyesi kalem →
+  // ikisinde de uygulanmaz. Fark: zusatz KENDİ trafosunu taşır (ayrı üretim işi), addon taşımaz.
+  const montagePrice = (opts.addon || opts.zusatz) ? 0 : montage.price;
   const total = round2(lettersTotal + (logoInfo ? logoInfo.total : 0) + (cubukInfo ? cubukInfo.total : 0) + netzteil + montagePrice);
 
   return { letters, perLetter, lettersTotal, logo: logoInfo, cubukLed: cubukInfo, netzteil, montage: montagePrice, total, construction, lighting, font, montageOpt: montage };

@@ -51,7 +51,16 @@ export async function POST(request) {
   // Preise ausschließlich serverseitig aus den Produktdaten berechnen
   const recalc = [];
   let datencheckCount = 0;
-  for (const item of items) {
+  // ── Çok yazılı proje: proje ücretleri siparişte BİR KEZ ────────────────────────
+  // Ek yazı blokları (konfigüratörde 2..n. yazı) 'zusatz' işaretiyle gelir: kendi
+  // trafosunu taşır ama ambalaj / minimum sipariş / montaj ikinci kez alınmaz.
+  // GÜVENLİK: bayrak tek başına ücret atlatmaz — siparişte en az bir harf kalemi TAM
+  // fiyatlanır; bütün harf kalemleri işaretliyse İLKİNİN işareti yok sayılır.
+  const harfIdx = items
+    .map((it, i) => (it?.konfig?.v3 === true && String(it?.konfig?.text || '').trim() ? i : -1))
+    .filter((i) => i >= 0);
+  const zusatzYokSay = harfIdx.length > 0 && harfIdx.every((i) => items[i]?.zusatz === true) ? harfIdx[0] : -1;
+  for (const [idx, item] of items.entries()) {
     const qty = Math.min(Math.max(parseInt(item.qty) || 0, 1), 999);
 
     // Positions-Metadaten (Datei nur aus eigenem Bucket, Bemerkung begrenzt)
@@ -94,13 +103,14 @@ export async function POST(request) {
       // ücretler (ambalaj, minimum, montaj, trafo) uygulanmaz. GÜVENLİK: yalnız harfsiz
       // (metinsiz) kalemde geçerli — metinli (harf) kalem addon ile ücret atlayamaz.
       const addon = item.addon === true && !s.config.text;
+      const zusatz = !addon && !!s.config.text && item.zusatz === true && idx !== zusatzYokSay;
       // Preis serverseitig über die Live-Preisbrücke (Motor, Fallback: Legacy-Formel) —
       // exakt dieselbe Funktion wie /api/price, damit Anzeige und Bestellung übereinstimmen.
-      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone }, { addon, marjKey });
+      const p = await serverKonfigPrice({ ...priceCfg, unbelMaterial: s.config.unbelMaterial, chromColor: s.config.chromColor, depth: s.config.depth, bohrschablone: s.config.bohrschablone }, { addon, zusatz, marjKey });
       if (!p) return Response.json({ error: 'Ungültige Konfiguration.' }, { status: 400 });
       // Gespeichert werden nur geprüfte Produktionsfelder + serverseitig
       // abgeleitete Preis-IDs (Client-lightingId/constructionId werden ignoriert).
-      const cfg = { ...s.config, v3: true, addon, lightingId: priceCfg.lightingId, constructionId: priceCfg.constructionId, trafo: priceCfg.trafo };
+      const cfg = { ...s.config, v3: true, addon, zusatz, lightingId: priceCfg.lightingId, constructionId: priceCfg.constructionId, trafo: priceCfg.trafo };
       recalc.push({
         name: '3D-Buchstaben nach Maß',
         categorySlug: 'werbetechnik',

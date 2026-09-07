@@ -62,7 +62,9 @@ export async function POST(request) {
 
   // addon: bağımsız ek ürün (ayrı sepete eklenen logo/çubuk) — proje-seviyesi ücretler
   // (ambalaj, minimum sipariş, montaj) uygulanmaz; yalnız üretim + kendi trafosu.
-  const p = await serverKonfigPrice(cfg, { addon: body.addon === true, marjKey });
+  // zusatz: çok yazılı projenin 2..n. yazı bloğu — proje-seviyesi ücretler (ambalaj, minimum
+  // sipariş, montaj) ilk blokta alındı, burada tekrar alınmaz; trafo blok başına kalır.
+  const p = await serverKonfigPrice(cfg, { addon: body.addon === true, zusatz: body.zusatz === true, marjKey });
   if (!p) return Response.json({ price: null });
 
   return Response.json({
