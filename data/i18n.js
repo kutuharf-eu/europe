@@ -439,7 +439,7 @@ export const TRANSLATIONS = {
       sideMat: { aluminium: 'Aluminium-Seiten', chrom: 'Chrom-Profil', pvc_akryl: 'Chrom-Profil lackiert', ters_kutu: 'Chrom-Rückwanne (Ters Tava)' },
       unbelMat: {
         strafor: { l: 'Styropor (Strafor)', d: 'Leicht & günstig' },
-        plexi: { l: 'Acryl', d: 'Farbig, wetterfest' },
+        plexi: { l: 'Acryl', d: '3 mm Acryl auf 18 mm PVC' },
         alu_lackiert: { l: 'Chrom lackiert', d: 'Robust, RAL-lackierbar' },
         edelstahl_chrom: { l: 'Edelstahl / Chrom', d: 'Hochwertig, langlebig' },
       },
@@ -1033,7 +1033,7 @@ export const TRANSLATIONS = {
       sideMat: { aluminium: 'Alüminyum kenarlı', chrom: 'Krom fileli', pvc_akryl: 'Boyalı krom fileli', ters_kutu: 'Krom ters tava' },
       unbelMat: {
         strafor: { l: 'Strafor', d: 'Hafif & ekonomik' },
-        plexi: { l: 'Akrilik', d: 'Renkli, hava koşullarına dayanıklı' },
+        plexi: { l: 'Akrilik', d: '18 mm dekota üzerine 3 mm akrilik' },
         alu_lackiert: { l: 'Boyalı krom', d: 'Sağlam, RAL boyanabilir' },
         edelstahl_chrom: { l: 'Paslanmaz / Krom', d: 'Kaliteli, uzun ömürlü' },
       },
@@ -1630,7 +1630,7 @@ export const TRANSLATIONS = {
       sideMat: { aluminium: 'Aluminium sides', chrom: 'Chrome trim', pvc_akryl: 'Painted chrome trim', ters_kutu: 'Chrome reverse tray' },
       unbelMat: {
         strafor: { l: 'Styrofoam', d: 'Light & economical' },
-        plexi: { l: 'Acrylic', d: 'Coloured, weatherproof' },
+        plexi: { l: 'Acrylic', d: '3 mm acrylic on 18 mm PVC' },
         alu_lackiert: { l: 'Painted chrome', d: 'Robust, RAL-paintable' },
         edelstahl_chrom: { l: 'Stainless / Chrome', d: 'Premium, durable' },
       },
