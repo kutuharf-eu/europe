@@ -33,6 +33,7 @@ export async function POST(request) {
   // Secret Key: anon darf seit dem Security-Lockdown nicht mehr direkt inserten
   // Eigene Supabase-DB von kutuharf.eu (Projekt zlyoiterlgdevxumfkwc): Anfragen leben
   // in kutuharf_anfragen (alle Tabellen sind kutuharf_*-präfixiert).
+  // Netzwerkfehler (pausiertes Projekt, DNS) dürfen die Funktion nicht abbrechen.
   const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/kutuharf_anfragen`, {
     method: 'POST',
     headers: {
@@ -53,13 +54,16 @@ export async function POST(request) {
     }),
   });
 
-  if (!res.ok) {
+  // Die Datenbank darf eine Anfrage NICHT verschlucken (2026-09-23): nach dem
+  // Umzug fehlte die Tabelle kutuharf_anfragen, der Insert schlug fehl, die
+  // Funktion stieg mit 500 aus — und weil die Mail erst danach kam, ging jede
+  // Anfrage spurlos verloren. Jetzt wird immer zuerst alles versucht.
+  const gespeichert = res.ok;
+  if (!gespeichert) {
     console.error('Supabase insert failed:', res.status, await res.text());
-    return Response.json({ error: 'Anfrage konnte nicht gespeichert werden. Bitte rufen Sie uns an.' }, { status: 500 });
   }
 
-  // Benachrichtigung per Mail — Fehler hier sollen die Anfrage nicht scheitern lassen,
-  // die Datenbank ist die Quelle der Wahrheit.
+  let mailVerschickt = false;
   if (process.env.RESEND_API_KEY) {
     try {
       const mailRes = await fetch('https://api.resend.com/emails', {
@@ -74,7 +78,7 @@ export async function POST(request) {
           from: 'KUTUHARF <info@kutuharf.eu>',
           to: ['info@kutuharf.eu'],
           reply_to: String(email).trim(),
-          subject: `Neue Anfrage${produkt ? ': ' + produkt : ''} — ${name}`,
+          subject: `${gespeichert ? '' : '[NICHT GESPEICHERT] '}Neue Anfrage${produkt ? ': ' + produkt : ''} — ${name}`,
           text: [
             `Name: ${name}`,
             `Firma: ${firma || '—'}`,
@@ -90,10 +94,19 @@ export async function POST(request) {
           ].join('\n'),
         }),
       });
+      mailVerschickt = mailRes.ok;
       if (!mailRes.ok) console.error('Resend failed:', mailRes.status, await mailRes.text());
     } catch (err) {
       console.error('Resend error:', err);
     }
+  }
+
+  // Fehler sieht der Kunde nur, wenn WEDER Datenbank NOCH Mail funktioniert hat.
+  if (!gespeichert && !mailVerschickt) {
+    return Response.json(
+      { error: 'Anfrage konnte nicht gespeichert werden. Bitte rufen Sie uns an.' },
+      { status: 500 },
+    );
   }
 
   return Response.json({ ok: true });
