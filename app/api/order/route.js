@@ -282,9 +282,13 @@ export async function POST(request) {
     }
   }
 
-  if (!insert.ok) {
+  // Eine Bestellung darf NIE spurlos verschwinden (2026-09-23): als die Tabelle
+  // nach dem Umzug fehlte, stieg die Route hier mit 500 aus — und weil die
+  // Mails erst danach kommen, gab es weder Datensatz noch Benachrichtigung.
+  // Jetzt läuft der Rest weiter; die Mail ist dann die einzige Kopie.
+  const gespeichert = insert.ok;
+  if (!gespeichert) {
     console.error('Order insert failed:', insert.status, await insert.text());
-    return Response.json({ error: 'Bestellung konnte nicht gespeichert werden. Bitte rufen Sie uns an.' }, { status: 500 });
   }
 
   const lines = recalc
@@ -324,8 +328,8 @@ export async function POST(request) {
         from: 'KUTUHARF <info@kutuharf.eu>',
         to: ['info@kutuharf.eu'],
         reply_to: email,
-        subject: `Neue Bestellung ${orderNo}${rate > 0 ? ' (Händler)' : ''} — ${name}`,
-        text: `Kunde: ${name}${firma ? ' / ' + firma : ''}\nE-Mail: ${email}\nTelefon: ${telefon || '—'}\nAdresse: ${strasse}, ${plz} ${ort}${safeLand ? ', ' + safeLand : ''}\n${notes ? 'Anmerkung: ' + notes + '\n' : ''}${safeLogoUrl ? 'Logo/Druckdaten: ' + safeLogoUrl + '\n' : ''}\n${summary}`,
+        subject: `${gespeichert ? '' : '[NICHT GESPEICHERT] '}Neue Bestellung ${orderNo}${rate > 0 ? ' (Händler)' : ''} — ${name}`,
+        text: `${gespeichert ? '' : 'ACHTUNG: Diese Bestellung konnte NICHT gespeichert werden — diese Mail ist die einzige Kopie.\n\n'}Kunde: ${name}${firma ? ' / ' + firma : ''}\nE-Mail: ${email}\nTelefon: ${telefon || '—'}\nAdresse: ${strasse}, ${plz} ${ort}${safeLand ? ', ' + safeLand : ''}\n${notes ? 'Anmerkung: ' + notes + '\n' : ''}${safeLogoUrl ? 'Logo/Druckdaten: ' + safeLogoUrl + '\n' : ''}\n${summary}`,
       }),
       send({
         from: 'KUTUHARF <info@kutuharf.eu>',
