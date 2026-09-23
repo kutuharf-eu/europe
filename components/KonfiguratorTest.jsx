@@ -2269,6 +2269,12 @@ function YaziBloku({ sel, set, index, adet, onSil, t, logoDims, logoFile, flushO
               )}
               {sel.unbelMaterial === 'plexi' && (
                 <div className="flex flex-col gap-4 border-l-2 border-accent/40 pl-4">
+                  {/* Aufbau der unbeleuchteten Acryl-Buchstaben: Kunden fragen genau
+                      danach, und ohne Angabe wird 'Acryl' mit Voll-Acryl verwechselt. */}
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                    <p className="text-sm font-semibold text-white/90">{t('konfig3.acrylAufbauTitel')}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-white/60">{t('konfig3.acrylAufbauText')}</p>
+                  </div>
                   <AcrylPicker label={t('konfig3.fAcrylColor')} value={sel.unbelAcryl} kontakt={sel.unbelAcrylKontakt} onPick={(id) => set({ unbelAcryl: id })} onKontakt={(v) => set({ unbelAcrylKontakt: v })} />
                 </div>
               )}

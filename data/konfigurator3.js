@@ -133,7 +133,9 @@ export const CHROM_SIDE_IDS = ['chrom', 'ters_kutu'];
 // Materialien bei Unbeleuchtet
 export const UNBEL_MAT = [
   { id: 'strafor', label: 'Styropor (Strafor)', desc: 'Leicht & günstig', img: 'styropor-3d-buchstaben', alt: 'Bunte 3D-Buchstaben aus Styropor an einer Wand' },
-  { id: 'plexi', label: 'Acryl', desc: 'Farbig, wetterfest', img: 'acryl-3d-buchstaben', alt: 'Glänzende 3D-Buchstaben aus blauem Acrylglas an einer Fassade' },
+  // Aufbau steht in der Kurzbeschreibung, damit niemand Voll-Acryl erwartet:
+  // 18 mm Dekota (PVC) als Korpus, 3 mm Acryl als Front (Murat, 23.09.2026).
+  { id: 'plexi', label: 'Acryl', desc: '3 mm Acryl auf 18 mm PVC', img: 'acryl-3d-buchstaben', alt: 'Glänzende 3D-Buchstaben aus blauem Acrylglas an einer Fassade' },
   { id: 'alu_lackiert', label: 'Chrom lackiert', desc: 'Robust, RAL-lackierbar', img: 'aluminium-lackiert-3d-buchstaben', alt: 'Lackierte Chrom-3D-Buchstaben in mattem Anthrazit' },
   { id: 'edelstahl_chrom', label: 'Edelstahl / Chrom', desc: 'Hochwertig, langlebig', img: 'edelstahl-chrom-3d-buchstaben', alt: '3D-Buchstaben aus gebürstetem Edelstahl an einer Steinfassade' },
 ];
@@ -303,6 +305,8 @@ export function detail3(sel) {
   if (sel.lit === 'unbeleuchtet') {
     p.push('Unbeleuchtet');
     p.push(`Material: ${findLabel(UNBEL_MAT, sel.unbelMaterial)}`);
+    // Aufbau gehört in jede Zusammenfassung und in jedes Angebot.
+    if (sel.unbelMaterial === 'plexi') p.push('Aufbau: 3 mm Acryl auf 18 mm Dekota (PVC), gesamt 21 mm');
     if (sel.unbelMaterial === 'alu_lackiert') {
       p.push(`RAL: ${sel.unbelRal || 'nach Wahl'}`);
       p.push(findLabel(SURFACES, sel.surface));
