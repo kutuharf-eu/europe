@@ -2,3 +2,6 @@
 .next/
 .vercel
 .env*
+
+# Masaüstünden sürüklenen geçici görseller
+*.jfif
